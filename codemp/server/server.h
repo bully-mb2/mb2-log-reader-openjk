@@ -290,9 +290,11 @@ extern	cvar_t	*sv_autoWhitelist;
 
 extern	cvar_t	*sv_snapShotDuelCull;
 
+extern	cvar_t	*sv_pingFix;
 extern	cvar_t	*sv_hibernateTime;
 extern	cvar_t	*sv_hibernateFPS;
-extern	cvar_t	*sv_pingFix;
+
+extern	cvar_t	*sv_antiDST;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;

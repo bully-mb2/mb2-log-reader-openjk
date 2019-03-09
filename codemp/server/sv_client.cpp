@@ -1212,6 +1212,15 @@ void SV_UserinfoChanged( client_t *cl ) {
 		SV_DropClient( cl, "userinfo string length exceeded" );
 	else
 		Info_SetValueForKey( cl->userinfo, "ip", ip );
+
+	if (sv_antiDST->integer) {
+		val = Info_ValueForKey(cl->userinfo, "model");
+		if (!Q_stricmpn(val, "darksidetools", 13) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
+			//SV_DropClient(cl, "was dropped by TnG!");
+			SV_DropClient(cl, SV_GetStringEdString("MP_SVGAME", "WAS_KICKED"));
+			cl->lastPacketTime = svs.time;
+		}
+	}
 }
 
 #define INFO_CHANGE_MIN_INTERVAL	6000 //6 seconds is reasonable I suppose
@@ -1295,6 +1304,12 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 			bProcessed = qtrue;
 			break;
 		}
+	}
+
+	if (sv_antiDST->integer && !Q_stricmpn(Cmd_Argv(0), "jkaDST_", 7) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
+		//SV_DropClient(cl, "was dropped by TnG!");
+		SV_DropClient(cl, SV_GetStringEdString("MP_SVGAME", "WAS_KICKED"));
+		cl->lastPacketTime = svs.time;
 	}
 
 	if (clientOK) {

@@ -79,6 +79,8 @@ cvar_t	*sv_pingFix;
 cvar_t	*sv_hibernateTime;
 cvar_t	*sv_hibernateFPS;
 
+cvar_t	*sv_antiDST;
+
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;
 
