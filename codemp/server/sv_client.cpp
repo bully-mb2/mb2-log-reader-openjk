@@ -1491,6 +1491,38 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 			// affects speed calculation
 			cmd->angles[ROLL] = 0;
 		}
+				if ( sv_strictPacketTimestamp->integer && cl->state == CS_ACTIVE ) {
+			if ( cmd->serverTime < (sv.time - 1000) ) {
+				static int lastWarnTime = 0;
+				if ( lastWarnTime < sv.time - 5000 ) {
+					lastWarnTime = sv.time;
+					Com_DPrintf(
+						"client %i(%i) serverTime too low (%i < %i: %.2fs)\n",
+						cl - svs.clients,
+						cl->state,
+						cmd->serverTime,
+						sv.time - 1000,
+						((sv.time - 1000) - cmd->serverTime) / 1000.0f
+					);
+				}
+				cmd->serverTime = sv.time - 1000;
+			}
+			else if ( cmd->serverTime > (sv.time + 200) ) {
+				static int lastWarnTime = 0;
+				if ( lastWarnTime < sv.time - 5000 ) {
+					lastWarnTime = sv.time;
+					Com_DPrintf(
+						"client %i:%i serverTime in future (%i > %i: %.2fs)\n",
+						cl - svs.clients,
+						cl->state,
+						cmd->serverTime,
+						sv.time + 200,
+						((sv.time + 200) - cmd->serverTime) / 1000.0f
+					);
+				}
+				cmd->serverTime = sv.time + 200;
+			}
+}
 		oldcmd = cmd;
 	}
 
