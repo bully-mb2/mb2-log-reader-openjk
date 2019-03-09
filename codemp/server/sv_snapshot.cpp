@@ -430,6 +430,21 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 			continue;
 		}
 
+		if (sv_legacyFixes->integer > 1 && ent->s.eType >= ET_EVENTS) {
+			int eventNum = 0;
+			eventNum = (ent->s.eType - ET_EVENTS) & ~EV_EVENT_BITS;
+
+			if (eventNum == EV_JUMP || eventNum == EV_FALL || eventNum == EV_FOOTSTEP) { //block all movement-triggered event entities, these should always be on a player
+				continue;
+			}
+			else if (sv_legacyFixes->integer > 2 && eventNum == EV_PLAY_EFFECT &&
+				(ent->s.eventParm == EFFECT_WATER_SPLASH || ent->s.eventParm == EFFECT_ACID_SPLASH || ent->s.eventParm == EFFECT_LAVA_SPLASH ||
+					ent->s.eventParm == EFFECT_LANDING_MUD || ent->s.eventParm == EFFECT_LANDING_DIRT || ent->s.eventParm == EFFECT_LANDING_SNOW || ent->s.eventParm == EFFECT_LANDING_GRAVEL))
+			{
+				continue; //block these so they cant be abused on ffa3
+			} //TODO just cap the amount of these off to a reasonable number instead of blocking all of them
+		}
+
 		svEnt = SV_SvEntityForGentity( ent );
 
 		// don't double add an entity through portals
