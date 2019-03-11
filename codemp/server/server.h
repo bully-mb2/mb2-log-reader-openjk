@@ -296,6 +296,7 @@ extern	cvar_t	*sv_hibernateTime;
 extern	cvar_t	*sv_hibernateFPS;
 
 extern	cvar_t	*sv_antiDST;
+extern	cvar_t	*sv_antilaghack;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;
