@@ -1019,6 +1019,7 @@ void SV_Init (void) {
 	Cvar_CheckRange(sv_hibernateFPS, 1, 1000, qtrue);
 
 	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "2 lines of anticheat");
+	sv_antilaghack = Cvar_Get("sv_antilaghack", "1", CVAR_NONE, "2 lines of anticheat");
 
 	sv_maxOOBRate = Cvar_Get("sv_maxOOBRate", "1000", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands" );
 	sv_maxOOBRateIP = Cvar_Get("sv_maxOOBRateIP", "1", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands per IP address" );
