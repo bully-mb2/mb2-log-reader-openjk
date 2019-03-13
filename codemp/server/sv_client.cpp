@@ -1310,11 +1310,6 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 		cl->lastPacketTime = svs.time;
 	}
 	
-	if (sv_antilaghack->integer && !Q_stricmpn(Cmd_Argv(0), "p_mempatch", 7) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
-		SV_DropClient(cl, "was kicked for cheating by JKA.io");
-		cl->lastPacketTime = svs.time;
-	}
-
 	if (clientOK) {
 		// pass unknown strings to the game
 		if (!u->name && sv.state == SS_GAME && (cl->state == CS_ACTIVE || cl->state == CS_PRIMED)) {
