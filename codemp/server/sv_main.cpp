@@ -81,6 +81,7 @@ cvar_t	*sv_hibernateTime;
 cvar_t	*sv_hibernateFPS;
 
 cvar_t	*sv_antiDST;
+cvar_t	*sv_fixplayerghosting;
 
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;

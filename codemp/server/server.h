@@ -296,7 +296,9 @@ extern	cvar_t	*sv_hibernateTime;
 extern	cvar_t	*sv_hibernateFPS;
 
 extern	cvar_t	*sv_antiDST;
-extern	cvar_t	*sv_antilaghack;
+<<<<<<< HEAD
+extern	cvar_t	*sv_fixplayerghosting;
+>>>>>>> 82829e3d (sv_fixplayerghosting)
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;

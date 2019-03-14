@@ -1019,7 +1019,7 @@ void SV_Init (void) {
 	Cvar_CheckRange(sv_hibernateFPS, 1, 1000, qtrue);
 
 	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempt to detect and kick players injecting or using DST"); //eghh CVAR_ARCHIVE_ND is like a 2-edged sword,
-																													 //on 1 hand I don't want people randomly discovering these in their server cfg,
+	sv_fixplayerghosting = Cvar_Get("sv_fixplayerghosting", "1", CVAR_NONE, "Fixes baseJKA/JK2/Q3 skin glitch bug"); //on 1 hand I don't want people randomly discovering these in their server cfg,
 																													 //but on the other if they're changed for whatever reason (rcon hacked/dumb admin listening to troll) then
 																													 //these won't revert back unless it's in their custom server cfg, guess ill leave them on CVAR_NONE for now, but should we just hide them with CVAR_INTERNAL?
 
