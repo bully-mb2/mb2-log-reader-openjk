@@ -1018,7 +1018,10 @@ void SV_Init (void) {
 	sv_hibernateFPS = Cvar_Get("sv_hibernateFPS", "2", CVAR_ARCHIVE_ND, "FPS during hibernation mode");
 	Cvar_CheckRange(sv_hibernateFPS, 1, 1000, qtrue);
 
-	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "2 lines of anticheat");
+	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempt to detect and kick players injecting or using DST"); //eghh CVAR_ARCHIVE_ND is like a 2-edged sword,
+																													 //on 1 hand I don't want people randomly discovering these in their server cfg,
+																													 //but on the other if they're changed for whatever reason (rcon hacked/dumb admin listening to troll) then
+																													 //these won't revert back unless it's in their custom server cfg, guess ill leave them on CVAR_NONE for now, but should we just hide them with CVAR_INTERNAL?
 
 	sv_maxOOBRate = Cvar_Get("sv_maxOOBRate", "1000", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands" );
 	sv_maxOOBRateIP = Cvar_Get("sv_maxOOBRateIP", "1", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands per IP address" );
