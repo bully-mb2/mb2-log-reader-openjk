@@ -1018,10 +1018,10 @@ void SV_Init (void) {
 	sv_hibernateFPS = Cvar_Get("sv_hibernateFPS", "2", CVAR_ARCHIVE_ND, "FPS during hibernation mode");
 	Cvar_CheckRange(sv_hibernateFPS, 1, 1000, qtrue);
 
-	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempt to detect and kick players injecting or using DST"); //eghh CVAR_ARCHIVE_ND is like a 2-edged sword,
-	sv_fixplayerghosting = Cvar_Get("sv_fixplayerghosting", "1", CVAR_NONE, "Fixes baseJKA/JK2/Q3 skin glitch bug"); //on 1 hand I don't want people randomly discovering these in their server cfg,
-																													 //but on the other if they're changed for whatever reason (rcon hacked/dumb admin listening to troll) then
-																													 //these won't revert back unless it's in their custom server cfg, guess ill leave them on CVAR_NONE for now, but should we just hide them with CVAR_INTERNAL?
+#ifdef DEDICATED
+	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempt to detect and kick players injecting or using DST");
+#endif
+	sv_fixplayerghosting = Cvar_Get("sv_fixplayerghosting", "1", CVAR_NONE, "Fixes baseJKA/JK2/Q3 skin glitch bug");
 
 	sv_maxOOBRate = Cvar_Get("sv_maxOOBRate", "1000", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands" );
 	sv_maxOOBRateIP = Cvar_Get("sv_maxOOBRateIP", "1", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands per IP address" );
@@ -1043,6 +1043,23 @@ void SV_Init (void) {
 	// create a heap for Ghoul2 to use for game side model vertex transforms used in collision detection
 #ifdef DEDICATED
 	SV_InitRef();
+
+	//for jka.io
+	{//good as place as any to do this (maybe SV_SpawnServer), altho this should probably check the gamename in the game dll instead of checking what fs_game is
+		char *fs_game = Cvar_VariableString("fs_game");
+
+		svs.detectedMod = MOD_BASEJKA;
+
+		if (!strlen(fs_game)) {
+			svs.detectedMod = MOD_BASEJKA;
+		}
+		else if (!Q_stricmpn(fs_game, "OpenJK", 6)) {
+			svs.detectedMod = MOD_BASEJKA;
+		}
+		else if (!Q_stricmpn(fs_game, "japlus", 6)) {
+			svs.detectedMod = MOD_JAPLUS;
+		}
+	}
 #endif
 }
 

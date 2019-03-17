@@ -80,7 +80,9 @@ cvar_t	*sv_pingFix;
 cvar_t	*sv_hibernateTime;
 cvar_t	*sv_hibernateFPS;
 
+#ifdef DEDICATED
 cvar_t	*sv_antiDST;
+#endif
 cvar_t	*sv_fixplayerghosting;
 
 serverBan_t serverBans[SERVER_MAXBANS];

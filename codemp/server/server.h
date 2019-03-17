@@ -198,6 +198,12 @@ typedef struct client_s {
 
 //=============================================================================
 
+#ifdef DEDICATED
+typedef enum {
+	MOD_BASEJKA,
+	MOD_JAPLUS
+} servermod_t;
+#endif
 
 // this structure will be cleared only when the game dll changes
 typedef struct serverStatic_s {
@@ -222,8 +228,11 @@ typedef struct serverStatic_s {
 	struct {
 		qboolean enabled = qtrue;
 		int lastTimeDisconnected;
-		//float sv_fps;
 	} hibernation;
+
+#ifdef DEDICATED
+	servermod_t	detectedMod;
+#endif
 
 } serverStatic_t;
 
@@ -295,7 +304,9 @@ extern	cvar_t	*sv_pingFix;
 extern	cvar_t	*sv_hibernateTime;
 extern	cvar_t	*sv_hibernateFPS;
 
+#ifdef DEDICATED
 extern	cvar_t	*sv_antiDST;
+#endif
 extern	cvar_t	*sv_fixplayerghosting;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];

@@ -1213,6 +1213,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 	else
 		Info_SetValueForKey( cl->userinfo, "ip", ip );
 
+#ifdef DEDICATED
 	val = Info_ValueForKey(cl->userinfo, "model");
 	if (!Q_stricmpn(val, "darksidetools", 13) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
 		Com_Printf("%sDetected DST injection from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
@@ -1221,6 +1222,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 			cl->lastPacketTime = svs.time;
 		}
 	}
+#endif
 }
 
 #define INFO_CHANGE_MIN_INTERVAL	6000 //6 seconds is reasonable I suppose
@@ -1306,6 +1308,7 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 		}
 	}
 
+#ifdef DEDICATED
 	if (!Q_stricmpn(Cmd_Argv(0), "jkaDST_", 7) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
 		Com_Printf("%sDetected DST command from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
 		if (sv_antiDST->integer) {
@@ -1313,6 +1316,7 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 			cl->lastPacketTime = svs.time;
 		}
 	}
+#endif
 	
 	if (clientOK) {
 		// pass unknown strings to the game
