@@ -361,8 +361,13 @@ SV_AddEntitiesVisibleFromPoint
 ===============
 */
 float g_svCullDist = -1.0f;
+#ifndef DEDICATED
 static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
 									snapshotEntityNumbers_t *eNums, qboolean portal ) {
+#else
+static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
+									snapshotEntityNumbers_t *eNums, qboolean portal, qboolean skipDuelCull ) {
+#endif
 	int		e, i;
 	sharedEntity_t *ent;
 	svEntity_t	*svEnt;
@@ -426,9 +431,15 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 			}
 		}
 
+#ifndef DEDICATED
 		if (DuelCull(SV_GentityNum(frame->ps.clientNum), ent)) {
 			continue;
 		}
+#else
+		if (!skipDuelCull && DuelCull(SV_GentityNum(frame->ps.clientNum), ent)) {
+			continue;
+		}
+#endif
 
 		if (sv_legacyFixes->integer > 1 && ent->s.eType >= ET_EVENTS) {
 			int eventNum = 0;
@@ -541,7 +552,11 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 					continue;
 				}
 			}
+#ifndef DEDICATED
 			SV_AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums, qtrue );
+#else
+			SV_AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums, qtrue, skipDuelCull);
+#endif
 		}
 	}
 }
@@ -628,7 +643,11 @@ static void SV_BuildClientSnapshot( client_t *client ) {
 
 	// add all the entities directly visible to the eye, which
 	// may include portal entities that merge other viewpoints
+#ifndef DEDICATED
 	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse );
+#else
+	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse, client->dontDuelCull );
+#endif
 
 	// if there were portals visible, there may be out of order entities
 	// in the list which will need to be resorted for the delta compression

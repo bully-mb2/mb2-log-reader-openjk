@@ -1222,6 +1222,18 @@ void SV_UserinfoChanged( client_t *cl ) {
 			cl->lastPacketTime = svs.time;
 		}
 	}
+
+	cl->dontDuelCull = qfalse;
+	if (svs.detectedMod == MOD_JAPLUS) {
+		val = Info_ValueForKey(cl->userinfo, "cjp_client");
+		if (strlen(val) >= 3)
+		{ //make sure they have some version of the plugin?
+			val = Info_ValueForKey(cl->userinfo, "cp_pluginDisable");
+			if (atoi(val) & (1 << 1)) { //JAPRO_PLUGIN_DUELSEEOTHERS
+				cl->dontDuelCull = qtrue;
+			}
+		}
+	}
 #endif
 }
 
