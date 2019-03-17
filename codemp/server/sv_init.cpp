@@ -977,10 +977,13 @@ void SV_Init (void) {
 	sv_rconPassword = Cvar_Get ("rconPassword", "", CVAR_TEMP );
 	sv_privatePassword = Cvar_Get ("sv_privatePassword", "", CVAR_TEMP );
 	sv_snapsMin = Cvar_Get ("sv_snapsMin", "10", CVAR_ARCHIVE_ND ); // 1 <=> sv_snapsMax
-	sv_snapsMax = Cvar_Get ("sv_snapsMax", "40", CVAR_ARCHIVE_ND ); // sv_snapsMin <=> sv_fps
+	Cvar_CheckRange(sv_snapsMin, 1, 1000, qtrue);
+	sv_snapsMax = Cvar_Get ("sv_snapsMax", "1000", CVAR_ARCHIVE_ND ); // sv_snapsMin <=> sv_fps
+	Cvar_CheckRange(sv_snapsMax, 1, 1000, qtrue);
 	sv_snapsPolicy = Cvar_Get ("sv_snapsPolicy", "1", CVAR_ARCHIVE_ND, "Determines which policy of enforcement is used for client's \"snaps\" cvar");
 	Cvar_CheckRange(sv_snapsPolicy, 0, 2, qtrue);
 	sv_fps = Cvar_Get ("sv_fps", "40", CVAR_SERVERINFO, "Server frames per second" );
+	Cvar_CheckRange(sv_fps, 1, 1000, qtrue);
 	sv_timeout = Cvar_Get ("sv_timeout", "200", CVAR_TEMP );
 	sv_zombietime = Cvar_Get ("sv_zombietime", "2", CVAR_TEMP );
 	Cvar_Get ("nextmap", "", CVAR_TEMP );
