@@ -361,6 +361,7 @@ SV_AddEntitiesVisibleFromPoint
 ===============
 */
 float g_svCullDist = -1.0f;
+#define MAX_LANDING_EFFECTS 1 //this goes up exponentially
 #ifndef DEDICATED
 static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
 									snapshotEntityNumbers_t *eNums, qboolean portal ) {
@@ -378,6 +379,9 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 	byte	*bitvector;
 	vec3_t	difference;
 	float	length, radius;
+#ifdef DEDICATED
+	int		numEffects = 0;
+#endif
 
 	// during an error shutdown message we may need to transmit
 	// the shutdown message after the server has shutdown, so
@@ -441,6 +445,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 		}
 #endif
 
+#ifdef DEDICATED
 		if (sv_legacyFixes->integer > 1 && ent->s.eType >= ET_EVENTS) {
 			int eventNum = 0;
 			eventNum = (ent->s.eType - ET_EVENTS) & ~EV_EVENT_BITS;
@@ -448,13 +453,15 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 			if (eventNum == EV_JUMP || eventNum == EV_FALL || eventNum == EV_FOOTSTEP) { //block all movement-triggered event entities, these should always be on a player
 				continue;
 			}
-			else if (sv_legacyFixes->integer > 2 && eventNum == EV_PLAY_EFFECT &&
-				(ent->s.eventParm == EFFECT_WATER_SPLASH || ent->s.eventParm == EFFECT_ACID_SPLASH || ent->s.eventParm == EFFECT_LAVA_SPLASH ||
-					ent->s.eventParm == EFFECT_LANDING_MUD || ent->s.eventParm == EFFECT_LANDING_DIRT || ent->s.eventParm == EFFECT_LANDING_SNOW || ent->s.eventParm == EFFECT_LANDING_GRAVEL))
+			else if (sv_legacyFixes->integer > 2 && (eventNum == EV_PLAY_EFFECT || eventNum == EV_PLAY_EFFECT_ID) &&
+				(ent->s.eventParm >= EFFECT_WATER_SPLASH && ent->s.eventParm <= EFFECT_LANDING_GRAVEL)) //all landing effects
 			{
-				continue; //block these so they cant be abused on ffa3
-			} //TODO just cap the amount of these off to a reasonable number instead of blocking all of them
+				numEffects++;
+				if (numEffects > MAX_LANDING_EFFECTS || sv_legacyFixes->integer > 3)
+					continue; //block these so they cant be abused on ffa3
+			}
 		}
+#endif
 
 		svEnt = SV_SvEntityForGentity( ent );
 
@@ -559,6 +566,10 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 #endif
 		}
 	}
+#ifdef DEDICATED
+	if (com_developer->integer && numEffects > 0)
+		Com_Printf("snapshot: numEffects = %i\n", numEffects);
+#endif
 }
 
 /*
