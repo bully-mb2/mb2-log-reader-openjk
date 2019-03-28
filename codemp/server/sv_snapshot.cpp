@@ -361,7 +361,7 @@ SV_AddEntitiesVisibleFromPoint
 ===============
 */
 float g_svCullDist = -1.0f;
-#define MAX_LANDING_EFFECTS 1 //this goes up exponentially
+#define MAX_LANDING_EFFECTS 16 //could do 1 for each player?
 #ifndef DEDICATED
 static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
 									snapshotEntityNumbers_t *eNums, qboolean portal ) {
