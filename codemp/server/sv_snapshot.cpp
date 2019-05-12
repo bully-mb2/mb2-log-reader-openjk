@@ -435,8 +435,8 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 			}
 		}
 
-#ifndef DEDICATED
-		if (DuelCull(SV_GentityNum(frame->ps.clientNum), ent)) {
+#ifdef DEDICATED
+		if (!skipDuelCull && DuelCull(SV_GentityNum(frame->ps.clientNum), ent) == 1) {
 			continue;
 		}
 #else
@@ -680,11 +680,11 @@ static void SV_BuildClientSnapshot( client_t *client ) {
 		ent = SV_GentityNum(entityNumbers.snapshotEntities[i]);
 		state = &svs.snapshotEntities[svs.nextSnapshotEntities % svs.numSnapshotEntities];
 		*state = ent->s;
-
+#ifdef DEDICATED
 		if (DuelCull(client->gentity, ent)) {
 			state->solid = 0;
 		}
-
+#endif
 		svs.nextSnapshotEntities++;
 		// this should never hit, map should always be restarted first in SV_Frame
 		if ( svs.nextSnapshotEntities >= 0x7FFFFFFE ) {
