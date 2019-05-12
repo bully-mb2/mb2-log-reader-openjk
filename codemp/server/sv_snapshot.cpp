@@ -361,8 +361,7 @@ SV_AddEntitiesVisibleFromPoint
 ===============
 */
 float g_svCullDist = -1.0f;
-#define MAX_LANDING_EFFECTS 16 //could do 1 for each player?
-#ifndef DEDICATED
+#define MAX_LANDING_EFFECTS_PER_SNAPSHOT 16
 static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
 									snapshotEntityNumbers_t *eNums, qboolean portal ) {
 #else
@@ -380,7 +379,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 	vec3_t	difference;
 	float	length, radius;
 #ifdef DEDICATED
-	int		numEffects = 0;
+	int		effectCount = 0;
 #endif
 
 	// during an error shutdown message we may need to transmit
@@ -446,18 +445,19 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 #endif
 
 #ifdef DEDICATED
-		if (sv_legacyFixes->integer > 1 && ent->s.eType >= ET_EVENTS) {
+		if (sv_legacyFixes->integer && ent->s.eType >= ET_EVENTS) {
 			int eventNum = 0;
 			eventNum = (ent->s.eType - ET_EVENTS) & ~EV_EVENT_BITS;
 
 			if (eventNum == EV_JUMP || eventNum == EV_FALL || eventNum == EV_FOOTSTEP) { //block all movement-triggered event entities, these should always be on a player
 				continue;
 			}
-			else if (sv_legacyFixes->integer > 2 && (eventNum == EV_PLAY_EFFECT || eventNum == EV_PLAY_EFFECT_ID) &&
+			
+			if ((eventNum == EV_PLAY_EFFECT || eventNum == EV_PLAY_EFFECT_ID) &&
 				(ent->s.eventParm >= EFFECT_WATER_SPLASH && ent->s.eventParm <= EFFECT_LANDING_GRAVEL)) //all landing effects
 			{
-				numEffects++;
-				if (numEffects > MAX_LANDING_EFFECTS || sv_legacyFixes->integer > 3)
+				effectCount++;
+				if (effectCount > MAX_LANDING_EFFECTS_PER_SNAPSHOT)// || sv_legacyFixes->integer > 3)
 					continue; //block these so they cant be abused on ffa3
 			}
 		}
