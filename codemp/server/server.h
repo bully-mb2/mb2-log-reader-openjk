@@ -204,8 +204,12 @@ typedef struct client_s {
 
 #ifdef DEDICATED
 typedef enum {
-	MOD_BASEJKA,
-	MOD_JAPLUS
+	SVMOD_UNKNOWN,
+	SVMOD_BASEJKA,
+	SVMOD_JAPLUS,
+	SVMOD_MBII,
+	SVMOD_JAPRO,
+	SVMOD_OPENJK
 } servermod_t;
 #endif
 
@@ -235,9 +239,8 @@ typedef struct serverStatic_s {
 	} hibernation;
 
 #ifdef DEDICATED
-	servermod_t	detectedMod;
+	servermod_t	servermod;
 #endif
-
 } serverStatic_t;
 
 #define SERVER_MAXBANS	1024
