@@ -118,7 +118,9 @@ void GVM_ClientThink( int clientNum, usercmd_t *ucmd ) {
 }
 
 void GVM_RunFrame( int levelTime ) {
-	if ( gvm && gvm->isLegacy ) {
+	if (!gvm)
+		return;
+	if ( gvm->isLegacy ) {
 		VM_Call( gvm, GAME_RUN_FRAME, levelTime );
 		return;
 	}
