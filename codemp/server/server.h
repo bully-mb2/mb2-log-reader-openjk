@@ -196,7 +196,7 @@ typedef struct client_s {
 	demoInfo_t		demo;
 
 #ifdef DEDICATED
-	qboolean		dontDuelCull;
+	qboolean		disableDuelCull;
 #endif
 } client_t;
 

@@ -363,11 +363,12 @@ SV_AddEntitiesVisibleFromPoint
 float g_svCullDist = -1.0f;
 #define MAX_LANDING_EFFECTS_PER_SNAPSHOT 16
 static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
-									snapshotEntityNumbers_t *eNums, qboolean portal ) {
+#ifndef DEDICATED
+									snapshotEntityNumbers_t *eNums, qboolean portal )
 #else
-static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
-									snapshotEntityNumbers_t *eNums, qboolean portal, qboolean skipDuelCull ) {
+									snapshotEntityNumbers_t *eNums, qboolean portal, qboolean skipDuelCull )
 #endif
+{
 	int		e, i;
 	sharedEntity_t *ent;
 	svEntity_t	*svEnt;
@@ -444,7 +445,6 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 		}
 #endif
 
-#ifdef DEDICATED
 		if (sv_legacyFixes->integer && svs.servermod != SVMOD_MBII && ent->s.eType >= ET_EVENTS)
 		{
 			int eventNum = (ent->s.eType - ET_EVENTS) & ~EV_EVENT_BITS;
@@ -657,7 +657,7 @@ static void SV_BuildClientSnapshot( client_t *client ) {
 #ifndef DEDICATED
 	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse );
 #else
-	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse, client->dontDuelCull );
+	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse, client->disableDuelCull );
 #endif
 
 	// if there were portals visible, there may be out of order entities
