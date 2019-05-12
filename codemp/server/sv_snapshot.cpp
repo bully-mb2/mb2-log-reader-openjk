@@ -561,10 +561,9 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 #endif
 		}
 	}
-#ifdef DEDICATED
-	if (com_developer->integer && numEffects > 0)
-		Com_Printf("snapshot: numEffects = %i\n", numEffects);
-#endif
+
+	if (com_developer->integer && effectCount > 0)
+		Com_Printf("snapshot: numEffects = %i\n", effectCount);
 }
 
 /*

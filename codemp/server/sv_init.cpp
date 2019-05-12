@@ -1047,23 +1047,6 @@ void SV_Init (void) {
 	// create a heap for Ghoul2 to use for game side model vertex transforms used in collision detection
 #ifdef DEDICATED
 	SV_InitRef();
-
-	//for jka.io
-	{//good as place as any to do this (maybe SV_SpawnServer), altho this should probably check the gamename in the game dll instead of checking what fs_game is
-		char *fs_game = Cvar_VariableString("fs_game");
-
-		svs.detectedMod = MOD_BASEJKA;
-
-		if (!strlen(fs_game)) {
-			svs.detectedMod = MOD_BASEJKA;
-		}
-		else if (!Q_stricmpn(fs_game, "OpenJK", 6)) {
-			svs.detectedMod = MOD_BASEJKA;
-		}
-		else if (!Q_stricmpn(fs_game, "japlus", 6)) {
-			svs.detectedMod = MOD_JAPLUS;
-		}
-	}
 #endif
 }
 
