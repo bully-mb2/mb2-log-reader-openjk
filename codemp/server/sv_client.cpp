@@ -1235,8 +1235,9 @@ void SV_UserinfoChanged( client_t *cl ) {
 		}
 	}
 
-	// forcecrash fix
-	if (sv_legacyFixes->integer >= 4) {
+
+	if (sv_legacyFixes->integer)
+	{
 		char forcePowers[30];
 		Q_strncpyz(forcePowers, Info_ValueForKey(cl->userinfo, "forcepowers"), sizeof(forcePowers));
 
@@ -1269,8 +1270,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 			if (seps != 2) {
 				badForce = qtrue;
 			}
-		}
-		else {
+		} else {
 			badForce = qtrue;
 		}
 
