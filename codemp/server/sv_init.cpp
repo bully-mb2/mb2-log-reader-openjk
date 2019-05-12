@@ -1010,8 +1010,11 @@ void SV_Init (void) {
 	sv_autoDemoBots = Cvar_Get( "sv_autoDemoBots", "0", CVAR_ARCHIVE_ND, "Record server-side demos for bots" );
 	sv_autoDemoMaxMaps = Cvar_Get( "sv_autoDemoMaxMaps", "0", CVAR_ARCHIVE_ND );
 
-	sv_legacyFixes = Cvar_Get( "sv_legacyFixes", "4", CVAR_ARCHIVE_ND );
-	sv_strictPacketTimestamp = Cvar_Get( "sv_strictPacketTimestamp", "1", CVAR_ARCHIVE );
+#ifndef DEDICATED //Default this to off on client to avoid potential mod compatibility issues.
+	sv_legacyFixes = Cvar_Get( "sv_legacyFixes", "0", CVAR_ARCHIVE );
+#else
+	sv_legacyFixes = Cvar_Get( "sv_legacyFixes", "1", CVAR_ARCHIVE );
+#endif
 
 	sv_banFile = Cvar_Get( "sv_banFile", "serverbans.dat", CVAR_ARCHIVE, "File to use to store bans and exceptions" );
 
