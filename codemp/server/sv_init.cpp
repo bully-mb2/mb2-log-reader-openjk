@@ -1022,14 +1022,13 @@ void SV_Init (void) {
 	sv_hibernateFPS = Cvar_Get("sv_hibernateFPS", "2", CVAR_ARCHIVE_ND, "FPS during hibernation mode");
 	Cvar_CheckRange(sv_hibernateFPS, 1, 1000, qtrue);
 
-#ifdef DEDICATED
-	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempt to detect and kick players injecting or using DST");
-#endif
-	sv_fixplayerghosting = Cvar_Get("sv_fixplayerghosting", "1", CVAR_NONE, "Fixes baseJKA/JK2/Q3 skin glitch bug");
-
 	sv_maxOOBRate = Cvar_Get("sv_maxOOBRate", "1000", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands" );
 	sv_maxOOBRateIP = Cvar_Get("sv_maxOOBRateIP", "1", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands per IP address" );
 	sv_autoWhitelist = Cvar_Get("sv_autoWhitelist", "1", CVAR_ARCHIVE, "Save player IPs to allow them using server during DOS attack" );
+
+#ifdef DEDICATED
+	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempts to detect and kick players injecting or using DST");
+#endif
 
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();

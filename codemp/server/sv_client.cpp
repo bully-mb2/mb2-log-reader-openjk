@@ -1215,26 +1215,14 @@ void SV_UserinfoChanged( client_t *cl ) {
 
 #ifdef DEDICATED
 	val = Info_ValueForKey(cl->userinfo, "model");
-	if (!Q_stricmpn(val, "darksidetools", 13) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
+	if (val && !Q_stricmpn(val, "darksidetools", 13) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
 		Com_Printf("%sDetected DST injection from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
 		if (sv_antiDST->integer) {
+			//SV_DropClient(cl, "was dropped by TnG!");
 			SV_DropClient(cl, "was kicked for cheating by JKA.io");
 			cl->lastPacketTime = svs.time;
 		}
 	}
-
-	cl->dontDuelCull = qfalse;
-	if (svs.detectedMod == MOD_JAPLUS) {
-		val = Info_ValueForKey(cl->userinfo, "cjp_client");
-		if (strlen(val) >= 3)
-		{ //make sure they have some version of the plugin?
-			val = Info_ValueForKey(cl->userinfo, "cp_pluginDisable");
-			if (atoi(val) & (1 << 1)) { //JAPRO_PLUGIN_DUELSEEOTHERS
-				cl->dontDuelCull = qtrue;
-			}
-		}
-	}
-
 
 	if (sv_legacyFixes->integer)
 	{
@@ -1367,15 +1355,16 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 	}
 
 #ifdef DEDICATED
-	if (!Q_stricmpn(Cmd_Argv(0), "jkaDST_", 7) && cl->netchan.remoteAddress.type != NA_LOOPBACK) {
+	if (!Q_stricmpn(Cmd_Argv(0), "jkaDST_", 7) && cl->netchan.remoteAddress.type != NA_LOOPBACK) { //typo'd a mistyped DST setting
 		Com_Printf("%sDetected DST command from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
 		if (sv_antiDST->integer) {
+			//SV_DropClient(cl, "was dropped by TnG!");
 			SV_DropClient(cl, "was kicked for cheating by JKA.io");
 			cl->lastPacketTime = svs.time;
 		}
 	}
 #endif
-	
+
 	if (clientOK) {
 		// pass unknown strings to the game
 		if (!u->name && sv.state == SS_GAME && (cl->state == CS_ACTIVE || cl->state == CS_PRIMED)) {
@@ -1390,8 +1379,9 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 			GVM_ClientCommand( cl - svs.clients );
 		}
 	}
-	else if (!bProcessed)
+	else if (!bProcessed) {
 		Com_DPrintf( "client text ignored for %s: %s\n", cl->name, Cmd_Argv(0) );
+	}
 }
 
 /*

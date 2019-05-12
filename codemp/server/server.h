@@ -311,7 +311,6 @@ extern	cvar_t	*sv_hibernateFPS;
 #ifdef DEDICATED
 extern	cvar_t	*sv_antiDST;
 #endif
-extern	cvar_t	*sv_fixplayerghosting;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;

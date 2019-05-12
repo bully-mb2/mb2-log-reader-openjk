@@ -83,7 +83,6 @@ cvar_t	*sv_hibernateFPS;
 #ifdef DEDICATED
 cvar_t	*sv_antiDST;
 #endif
-cvar_t	*sv_fixplayerghosting;
 
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;
@@ -261,7 +260,7 @@ void SV_MasterHeartbeat( void ) {
 
 	// send to group masters
 	for ( i = 0 ; i < MAX_MASTER_SERVERS ; i++ ) {
-		if ( !sv_master[i]->string[0] ) {
+		if ( !sv_master[i] || !sv_master[i]->string[0] ) {
 			continue;
 		}
 
