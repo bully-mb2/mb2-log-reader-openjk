@@ -1013,6 +1013,7 @@ void SV_Init (void) {
 #else
 	sv_legacyFixes = Cvar_Get( "sv_legacyFixes", "1", CVAR_ARCHIVE );
 #endif
+	sv_strictPacketTimestamp = Cvar_Get( "sv_strictPacketTimestamp", "1", CVAR_NONE, "" );
 
 	sv_banFile = Cvar_Get( "sv_banFile", "serverbans.dat", CVAR_ARCHIVE, "File to use to store bans and exceptions" );
 

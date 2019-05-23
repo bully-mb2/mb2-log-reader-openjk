@@ -1720,7 +1720,8 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 				cmd->angles[ROLL] = 0;
 			}
 		}
-				if ( sv_strictPacketTimestamp->integer && cl->state == CS_ACTIVE ) {
+
+		if ( sv_strictPacketTimestamp->integer && cl->state == CS_ACTIVE ) {
 			if ( cmd->serverTime < (sv.time - 1000) ) {
 				static int lastWarnTime = 0;
 				if ( lastWarnTime < sv.time - 5000 ) {
