@@ -197,6 +197,10 @@ typedef struct client_s {
 
 #ifdef DEDICATED
 	qboolean		disableDuelCull;
+	//kms...
+	qboolean		unfixPing;
+	//set to true when client is estimated to have sent less than 60 packets in the last second,
+	//and falls back to baseJKA ping calculation when calculating it for this client
 #endif
 } client_t;
 

@@ -562,8 +562,8 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 		}
 	}
 
-	if (com_developer->integer && effectCount > 0)
-		Com_Printf("snapshot: numEffects = %i\n", effectCount);
+	if (!com_dedicated->integer && com_developer->integer && effectCount > 0)
+		Com_Printf("Snapshot: numEffects = %i\n", effectCount);
 }
 
 /*
@@ -739,6 +739,7 @@ Called by SV_SendClientSnapshot and SV_SendClientGameState
 */
 void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 	int			rateMsec;
+	qboolean	fixPing = (qboolean)(sv_pingFix->integer);
 
 	// MW - my attempt to fix illegible server message errors caused by
 	// packet fragmentation of initial snapshot.
@@ -750,10 +751,13 @@ void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 		SV_Netchan_TransmitNextFragment(&client->netchan);
 	}
 
+	if (sv_pingFix->integer == 2 && client->unfixPing)
+		fixPing = qfalse;
+
 	// record information about the message
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSize = msg->cursize;
 	// With sv_pingFix enabled we use a time value that is not limited by sv_fps.
-	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSent = (sv_pingFix->integer ? Sys_Milliseconds() : svs.time);
+	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSent = (fixPing ? Sys_Milliseconds() : svs.time);
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageAcked = -1;
 
 	// save the message to demo.  this must happen before sending over network as that encodes the backing databuf

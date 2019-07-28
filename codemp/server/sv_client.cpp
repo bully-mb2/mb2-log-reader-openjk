@@ -1312,7 +1312,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 			Com_Printf("%sDetected DST injection from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
 			if (sv_antiDST->integer) {
 				//SV_DropClient(cl, "was dropped by TnG!");
-			SV_DropClient(cl, "was kicked for cheating by JKA.io");
+				SV_DropClient(cl, "was kicked for cheating by JKA.io");
 				cl->lastPacketTime = svs.time;
 			}
 		}
@@ -1691,6 +1691,8 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 	usercmd_t	nullcmd;
 	usercmd_t	cmds[MAX_PACKET_USERCMDS];
 	usercmd_t	*cmd, *oldcmd;
+	qboolean	fixPing = (qboolean)sv_pingFix->integer;
+	int			oldServerTime = 0, firstServerTime = 0, lastServerTime = 0;
 
 	if ( delta ) {
 		cl->deltaMessage = cl->messageAcknowledge;
@@ -1708,6 +1710,16 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 	if ( cmdCount > MAX_PACKET_USERCMDS ) {
 		Com_Printf( "cmdCount > MAX_PACKET_USERCMDS\n" );
 		return;
+	}
+
+	if (cl->lastUsercmd.serverTime)
+		oldServerTime = cl->lastUsercmd.serverTime;
+
+	if (cl->unfixPing) {
+		if (sv_pingFix->integer != 2)
+			cl->unfixPing = qfalse;
+		else if (fixPing && cl->unfixPing)
+			fixPing = qfalse;
 	}
 
 	// use the checksum feed in the key
@@ -1772,8 +1784,8 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 
 	// save time for ping calculation
 	// With sv_pingFix enabled we store the time of the first acknowledge, instead of the last. And we use a time value that is not limited by sv_fps.
-	if (!sv_pingFix->integer || cl->frames[cl->messageAcknowledge & PACKET_MASK].messageAcked == -1)
-		cl->frames[cl->messageAcknowledge & PACKET_MASK].messageAcked = (sv_pingFix->integer ? Sys_Milliseconds() : svs.time);
+	if (!fixPing || cl->frames[cl->messageAcknowledge & PACKET_MASK].messageAcked == -1)
+		cl->frames[cl->messageAcknowledge & PACKET_MASK].messageAcked = (fixPing ? Sys_Milliseconds() : svs.time);
 
 	// TTimo
 	// catch the no-cp-yet situation before SV_ClientEnterWorld
@@ -1824,7 +1836,36 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 		if ( cmds[i].serverTime <= cl->lastUsercmd.serverTime ) {
 			continue;
 		}
+		else if (!firstServerTime) {
+			firstServerTime = cmds[i].serverTime;
+		}
+		else if (cmds[i].serverTime > lastServerTime) {
+			lastServerTime = cmds[i].serverTime;
+		}
 		SV_ClientThink (cl, &cmds[ i ]);
+	}
+
+	if (lastServerTime <= 0) {//lastServerTime is always 0 if client is sending 1 cmd per packet
+		lastServerTime = firstServerTime;
+	}
+
+	if (sv_pingFix->integer == 2 && oldServerTime > 0 && firstServerTime > 0 && lastServerTime > 0)
+	{
+		int packetDelta = lastServerTime - oldServerTime;
+		//int serverFrameMsec = (1000 / sv_fps->integer);
+
+		if (packetDelta > 0) 
+		{
+			cl->unfixPing = (qboolean)(packetDelta > 20);// serverFrameMsec) //allows for some leeway but is supposed to use old ping calculation if their packet rate is less than 55-60
+
+			if (cl->unfixPing && com_developer->integer > 3) { //debug spew...
+				char buf[MAX_STRING_CHARS] = { 0 };
+				Com_sprintf(buf, sizeof(buf),
+					S_COLOR_YELLOW "Packet delta too low (packetDelta %i cmdCount %i) using old ping calculation on clientNum %i\n", packetDelta, cmdCount, cl - svs.clients);
+				Com_Printf(buf);
+				SV_SendServerCommand(cl, "print \"%s\"", buf);
+			}
+		}
 	}
 }
 
