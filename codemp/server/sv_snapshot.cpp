@@ -751,8 +751,10 @@ void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 		SV_Netchan_TransmitNextFragment(&client->netchan);
 	}
 
+#ifdef DEDICATED
 	if (sv_pingFix->integer == 2 && client->unfixPing)
 		fixPing = qfalse;
+#endif
 
 	// record information about the message
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSize = msg->cursize;
