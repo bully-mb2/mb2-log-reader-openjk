@@ -196,11 +196,12 @@ typedef struct client_s {
 	demoInfo_t		demo;
 
 #ifdef DEDICATED
-	qboolean		disableDuelCull;
-	//kms...
-	qboolean		unfixPing;
-	//set to true when client is estimated to have sent less than 60 packets in the last second,
-	//and falls back to baseJKA ping calculation when calculating it for this client
+	qboolean		disableDuelCull;	//set for clients with "Duel see others" option set in cp_pluginDisable on JA+ servers
+										//kms...
+	qboolean		unfixPing;			//set to true when client is estimated to have sent less than 60 packets in the last second,
+										//and falls back to baseJKA ping calculation when calculating it for this client
+
+	qboolean		chatLogPolicySent;	//set once client has been sent the "This server logs X chat messages" info, avoids sending message on map change
 #endif
 } client_t;
 
@@ -242,6 +243,9 @@ typedef struct serverStatic_s {
 
 	servermod_t	servermod;
 	qboolean	gvmIsLegacy;
+#ifdef DEDICATED
+	qboolean	gameLoggingEnabled;
+#endif
 } serverStatic_t;
 
 #define SERVER_MAXBANS	1024

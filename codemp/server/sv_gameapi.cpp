@@ -2813,6 +2813,15 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 void SV_InitGame( qboolean restart ) {
 	int i=0;
 	client_t *cl = NULL;
+#ifdef DEDICATED
+	cvar_t *g_log = Cvar_Get("g_log", "games.log", CVAR_NONE, "");
+
+	if (g_log)
+		Cvar_Unset(g_log); //unset this when reloading game module...
+	g_log = NULL;
+
+	svs.gameLoggingEnabled = qfalse;
+#endif
 
 	// clear level pointers
 	sv.entityParsePoint = CM_EntityString();
@@ -2822,49 +2831,50 @@ void SV_InitGame( qboolean restart ) {
 	GVM_InitGame( sv.time, Com_Milliseconds(), restart );
 
 	svs.servermod = SVMOD_UNKNOWN;
-	if (sv_legacyFixes->integer)
-	{
+	if (sv_legacyFixes->integer) {
 		char *gamename = Cvar_VariableString("gamename");
 
-		if (!gamename || !strlen(gamename)) {
+		if (!gamename || !VALIDSTRING(gamename))
+		{
 			svs.servermod = SVMOD_UNKNOWN;
 			Com_DPrintf("%sFailed to detect loaded mod!\n", S_COLOR_RED);
-			return;
 		}
-		Com_DPrintf("%sDetected mod: %s\n", S_COLOR_CYAN, gamename);
-
-		if (!Q_stricmpn(gamename, "basejk", 6)) {
-			if (gvm && !gvm->isLegacy)
-				svs.servermod = SVMOD_OPENJK; //some OpenJK forks rename themselves to basejka
-			else
-				svs.servermod = SVMOD_BASEJKA;
-			return;
-		}
-
-		if (!Q_stricmpn(gamename, "JA+", 3)) {
-			svs.servermod = SVMOD_JAPLUS;
-			return;
-		}
-
-		if (!Q_stricmpn(gamename, "Movie Battles", 13))
+		else
 		{
-			svs.servermod = SVMOD_MBII;
-			return;
-		}
+			Com_DPrintf("%sDetected mod: %s\n", S_COLOR_CYAN, gamename);
 
-		if (!Q_stricmpn(gamename, "japro", 5))
-		{
-			svs.servermod = SVMOD_JAPRO;
-			return;
+			if (!Q_stricmpn(gamename, "basejk", 6)) {
+				if (gvm && !gvm->isLegacy)
+					svs.servermod = SVMOD_OPENJK; //some OpenJK forks rename themselves to basejka
+				else
+					svs.servermod = SVMOD_BASEJKA;
+			}
+			else if (!Q_stricmpn(gamename, "JA+", 3)) {
+				svs.servermod = SVMOD_JAPLUS;
+			}
+			else if (!Q_stricmpn(gamename, "Movie Battles", 13)) {
+				svs.servermod = SVMOD_MBII;
+			}
+			else if (!Q_stricmpn(gamename, "japro", 5)) {
+				svs.servermod = SVMOD_JAPRO;
+			}
+			else if (!Q_stricmpn(gamename, "OpenJK", 6)) {
+				svs.servermod = SVMOD_OPENJK;
+			}
+			else {
+				Com_DPrintf("%sUnsupported mod detected (%s) - some server engine features will be unavailable\n", S_COLOR_YELLOW, gamename);
+			}
 		}
-
-		if (!Q_stricmpn(gamename, "OpenJK", 6)) {
-			svs.servermod = SVMOD_OPENJK;
-			return;
-		}
-
-		Com_DPrintf("%sUnsupported mod detected (%s) - some server engine features will be unavailable\n", S_COLOR_YELLOW, gamename);
 	}
+
+#ifdef DEDICATED
+	g_log = Cvar_Get("g_log", "games.log", CVAR_NONE, ""); //check again now
+	if (g_log && g_log->string && g_log->string[0] && VALIDSTRING(g_log->string)) {
+		svs.gameLoggingEnabled = qtrue;
+		Com_DPrintf(S_COLOR_CYAN "Game logging to %s\n", g_log->string);
+	}
+	g_log = NULL;
+#endif
 }
 
 void SV_BindGame( void ) {

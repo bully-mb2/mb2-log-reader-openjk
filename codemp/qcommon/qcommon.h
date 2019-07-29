@@ -796,6 +796,7 @@ extern	cvar_t	*com_affinity;
 extern	cvar_t	*com_busyWait;
 
 #ifdef DEDICATED
+extern	cvar_t	*com_logfile;
 extern	cvar_t	*com_logChat;
 #endif
 
