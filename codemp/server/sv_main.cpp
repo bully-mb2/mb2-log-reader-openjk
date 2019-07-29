@@ -82,6 +82,8 @@ cvar_t	*sv_hibernateFPS;
 
 #ifdef DEDICATED
 cvar_t	*sv_antiDST;
+
+//cvar_t	*sv_g_logSync;
 #endif
 
 serverBan_t serverBans[SERVER_MAXBANS];
@@ -1124,6 +1126,18 @@ void SV_CheckCvars( void ) {
 			}
 		}
 	}
+
+#ifdef DEDICATED
+	//Actively force specific cvar values here
+	/*if (svs.servermod != SVMOD_UNKNOWN && svs.servermod != SVMOD_MBII) //on supported mod and isn't MB2 (logSync is necessary for RTV plugin)
+	{
+		if (sv_g_logSync->modified) {
+			if (sv_g_logSync->integer) //was enabled
+				Cvar_Set("g_logSync", "0");
+			sv_g_logSync->modified = qfalse;
+		}
+	}*/
+#endif
 }
 
 /*

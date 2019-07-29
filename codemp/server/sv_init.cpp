@@ -922,6 +922,7 @@ static void SV_InitRef( void ) {
 #endif
 
 void SV_Init (void) {
+	int index;
 
 	time( &svs.startTime );
 
@@ -990,7 +991,7 @@ void SV_Init (void) {
 	sv_master[0] = Cvar_Get ("sv_master1", MASTER_SERVER_NAME, CVAR_PROTECTED );
 	sv_master[1] = Cvar_Get ("sv_master2", JKHUB_MASTER_SERVER_NAME, CVAR_PROTECTED);
 	sv_master[3] = Cvar_Get("sv_master3", "master.ouned.de", CVAR_PROTECTED);
-	for(int index = 3; index < MAX_MASTER_SERVERS; index++)
+	for (index = 3; index < MAX_MASTER_SERVERS; index++)
 		sv_master[index] = Cvar_Get(va("sv_master%d", index + 1), "", CVAR_ARCHIVE_ND|CVAR_PROTECTED);
 	sv_reconnectlimit = Cvar_Get ("sv_reconnectlimit", "3", 0);
 	sv_showghoultraces = Cvar_Get ("sv_showghoultraces", "0", 0);
@@ -1030,6 +1031,9 @@ void SV_Init (void) {
 #ifdef DEDICATED
 	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempts to detect and kick players injecting or using DST");
 	sv_pingFix = Cvar_Get("sv_pingFix", "2", CVAR_ARCHIVE_ND, "Improved scoreboard client ping calculation - 1: always use new ping calculation - 2: fall back to old method if client's packet rate is less than 60");
+
+	//Used to control/force certain settings at all times
+	//sv_g_logSync = Cvar_Get("g_logsync", "0", CVAR_NONE, "");
 #else
 	sv_pingFix = Cvar_Get("sv_pingFix", "1", CVAR_ARCHIVE_ND, "Improved scoreboard client ping calculation");
 #endif
