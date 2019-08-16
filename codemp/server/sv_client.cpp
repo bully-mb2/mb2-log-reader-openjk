@@ -553,7 +553,13 @@ void SV_SendClientChatLogPolicy( client_t *client ) {
 	if (svs.time - client->chatLogPolicySentTime <= 5000) //don't send more than once every 5 seconds
 		return;
 
-	SV_SendServerCommand(client, "print \"%sThis server logs %s chat messages\n\"", S_COLOR_CYAN, com_logChat->integer == 1 ? "all public and team" : "no");
+	//SV_SendServerCommand(client, "print \"%sThis server logs %s chat messages\n\"", S_COLOR_CYAN, com_logChat->integer == 1 ? "all public and team" : "no");
+	if (com_logChat->integer == 1) {
+		SV_SendServerCommand(client, "print \"%scom_logChat is 1: This server does not log private messages (/tell) to protect player privacy\n\"", S_COLOR_CYAN);
+	}
+	else {
+		SV_SendServerCommand(client, "print \"%scom_logChat is 0: This server has a no-logging policy to protect player privacy\n\"", S_COLOR_CYAN);
+	}
 	client->chatLogPolicySentTime = svs.time;
 	client->chatLogPolicySent = qtrue;
 }
