@@ -349,7 +349,7 @@ gotnewcl:
 	newcl->lastUserInfoCount = 0; //reset the count
 
 #ifdef DEDICATED
-	newcl->chatLogPolicySent = qfalse;
+	//newcl->chatLogPolicySent = qfalse;
 #endif
 
 	// if this was the first client on the server, or the last client
@@ -604,6 +604,14 @@ void SV_ClientEnterWorld( client_t *client, usercmd_t *cmd ) {
 	GVM_ClientBegin( client - svs.clients );
 
 	SV_BeginAutoRecordDemos();
+
+#ifdef DEDICATED
+	if (com_logChat && com_logChat->integer < 2 && (svs.gameLoggingEnabled || com_logfile->integer))// && !client->chatLogPolicySent)
+	{
+		SV_SendServerCommand(client, "print \"%sThis server logs %s chat messages\n\"", S_COLOR_CYAN, com_logChat->integer == 1 ? "all public and team" : "no");
+		//client->chatLogPolicySent = qtrue;
+	}
+#endif
 }
 
 /*
@@ -1822,12 +1830,6 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 	if ( cl->state == CS_PRIMED ) {
 		SV_ClientEnterWorld( cl, &cmds[0] );
 		// the moves can be processed normaly
-#ifdef DEDICATED
-		if (com_logChat && com_logChat->integer < 2 && (svs.gameLoggingEnabled || com_logfile->integer) && !cl->chatLogPolicySent) {
-			SV_SendServerCommand(cl, "print \"%sThis server logs %s chat messages\n\"", S_COLOR_CYAN, com_logChat->integer == 1 ? "all public and team" : "no");
-			cl->chatLogPolicySent = qtrue;
-		}
-#endif
 	}
 
 	// a bad cp command was sent, drop the client

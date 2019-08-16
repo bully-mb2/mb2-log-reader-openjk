@@ -201,7 +201,7 @@ typedef struct client_s {
 	qboolean		unfixPing;			//set to true when client is estimated to have sent less than 60 packets in the last second,
 										//and falls back to baseJKA ping calculation when calculating it for this client
 
-	qboolean		chatLogPolicySent;	//set once client has been sent the "This server logs X chat messages" info, avoids sending message on map change
+	//qboolean		chatLogPolicySent;	//set once client has been sent the "This server logs X chat messages" info, avoids sending message on map change
 #endif
 } client_t;
 
