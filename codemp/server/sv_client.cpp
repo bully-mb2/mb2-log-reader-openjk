@@ -387,6 +387,11 @@ void SV_DropClient( client_t *drop, const char *reason ) {
 	// Kill any download
 	SV_CloseDownload( drop );
 
+#ifdef DEDICATED
+	drop->chatLogPolicySentTime = 0;
+	drop->chatLogPolicySent = qfalse;
+#endif
+
 	// tell everyone why they got dropped
 	SV_SendServerCommand( NULL, "print \"%s" S_COLOR_WHITE " %s\n\"", drop->name, reason );
 
@@ -540,14 +545,17 @@ void SV_SendClientGameState( client_t *client ) {
 }
 
 #ifdef DEDICATED
-void SV_SendClientChatLogPolicy( client_t *client ) {
+void SV_SendClientChatLogPolicy( client_t *client )
+{
+	if (!client)
+		return;
 	if (!com_logChat || com_logChat->integer >= 2)
 		return;
 
 	if (!svs.gameLoggingEnabled && (!com_logfile || !com_logfile->integer))
 		return;
 
-	if (svs.servermod == SVMOD_UNKNOWN)
+	if (svs.servermod == SVMOD_UNKNOWN || (svs.servermod == SVMOD_MBII && client->chatLogPolicySent))
 		return;
 
 	if (svs.time - client->chatLogPolicySentTime <= 5000) //don't send more than once every 5 seconds
