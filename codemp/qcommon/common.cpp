@@ -74,6 +74,7 @@ cvar_t	*com_affinity;
 
 #ifdef DEDICATED
 cvar_t	*com_logChat;
+cvar_t	*com_printAllMessages;
 #endif
 
 // com_speeds times
@@ -133,6 +134,9 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 	static qboolean opening_qconsole = qfalse;
+#ifdef DEDICATED
+	qboolean logThis = qtrue;
+#endif
 
 	va_start (argptr,fmt);
 	Q_vsnprintf (msg, sizeof(msg), fmt, argptr);
@@ -150,7 +154,24 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 		return;
 	}
 
-#ifndef DEDICATED
+#ifdef DEDICATED
+	if (com_logChat&& com_printAllMessages && com_logChat->integer < 2)
+	{
+		//so console log shows the say/sayteam/tell command being received,
+		//but it also shows the "chat" command as it goes out, so we'll just filter all of those out
+		//TODO: determine what type of message it is based on the contents of the chat cmd, so we don't filter out chat messages from mods/custom entities
+		//well, doesn't that change depending on what mod is running? i think mb2 adds sender and receiver to PMs...
+		if (Q_stristr(msg, "^7\x19: "))
+			logThis = qfalse;
+		if (!com_logChat->integer && (Q_stristr(msg, "say: ") || Q_stristr(msg, "sayteam: ") || Q_stristr(msg, "tell: "))) //0 - log nothing
+			logThis = qfalse;
+		if (com_logChat->integer == 1 && Q_stristr(msg, "tell: ")) //1 - only log public/team chat
+			logThis = qfalse; //return len so it thinks the write was successful
+
+		if (!logThis && !com_printAllMessages->integer)
+			return;
+	}
+#else
 	CL_ConsolePrint( msg );
 #endif
 
@@ -159,9 +180,6 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 
 	// logfile
 	if ( com_logfile && com_logfile->integer ) {
-#ifdef DEDICATED
-		qboolean logThis = qtrue;
-#endif
     // TTimo: only open the qconsole.log if the filesystem is in an initialized state
     //   also, avoid recursing in the qconsole.log opening (i.e. if fs_debug is on)
 		if ( !logfile && FS_Initialized() && !opening_qconsole ) {
@@ -190,19 +208,6 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 		}
 		opening_qconsole = qfalse;
 #ifdef DEDICATED
-		if (com_logChat && com_logChat->integer < 2)
-		{
-			//so console log shows the say/sayteam/tell command being received,
-			//but it also shows the "chat" command as it goes out, so we'll just filter all of those out
-			//TODO: determine what type of message it is based on the contents of the chat cmd, so we don't filter out chat messages from mods/custom entities
-			//well, doesn't that change depending on what mod is running? i think mb2 adds sender and receiver to PMs...
-			if (Q_stristr(msg, "^7\x19: "))
-				logThis = qfalse;
-			if (!com_logChat->integer && (Q_stristr(msg, "say: ") || Q_stristr(msg, "sayteam: ") || Q_stristr(msg, "tell: "))) //0 - log nothing
-				logThis = qfalse;
-			if (com_logChat->integer == 1 && Q_stristr(msg, "tell: ")) //1 - only log public/team chat
-				logThis = qfalse; //return len so it thinks the write was successful
-		}
 		if ( logThis && logfile && FS_Initialized() ) {
 #else
 		if ( logfile && FS_Initialized() ) {
@@ -1267,6 +1272,7 @@ void Com_Init( char *commandLine ) {
 
 #ifdef DEDICATED
 		com_logChat = Cvar_Get( "com_logChat", "0", CVAR_NONE ); //0 - log nothing, 1 - log all but pm/tell messages, 2 - log all chat (baseJKA)
+		com_printAllMessages = Cvar_Get( "com_printAllMessages", "0", CVAR_INTERNAL ); //hidden cvar for debugging
 #endif
 
 		com_bootlogo = Cvar_Get( "com_bootlogo", "1", CVAR_ARCHIVE_ND, "Show intro movies" );
