@@ -201,6 +201,7 @@ typedef struct client_s {
 	qboolean		unfixPing;			//set to true when client is estimated to have sent less than 60 packets in the last second,
 										//and falls back to baseJKA ping calculation when calculating it for this client
 
+	int				chatLogPolicySentTime; //ugly hack of a workaround
 	qboolean		chatLogPolicySent;	//set once client has been sent the "This server logs X chat messages" info, avoids sending message on map change
 #endif
 } client_t;
@@ -402,7 +403,7 @@ void SV_GetChallenge( netadr_t from );
 void SV_DirectConnect( netadr_t from );
 
 #ifdef DEDICATED
-QINLINE void SV_SendClientChatLogPolicy( client_t *client );
+void SV_SendClientChatLogPolicy( client_t *client );
 #endif
 
 void SV_SendClientMapChange( client_t *client );

@@ -271,7 +271,8 @@ static void SV_WriteSnapshotToClient( client_t *client, msg_t *msg ) {
 	}
 
 #ifdef DEDICATED
-	if (!client->chatLogPolicySent || (frame && oldframe && ((oldframe->ps.pm_flags & PMF_FOLLOW) || oldframe->ps.pm_type == PM_SPECTATOR) && !(frame->ps.pm_flags & PMF_FOLLOW) && frame->ps.pm_type != PM_SPECTATOR))
+	if (!client->chatLogPolicySent || (svs.servermod != SVMOD_UNKNOWN && svs.servermod != SVMOD_MBII && frame && oldframe
+		&& ((oldframe->ps.pm_flags & PMF_FOLLOW) || oldframe->ps.pm_type == PM_SPECTATOR) && !(frame->ps.pm_flags & PMF_FOLLOW) && frame->ps.pm_type != PM_SPECTATOR))
 	{//either hasn't been sent the message or they just switched from spectators
 		SV_SendClientChatLogPolicy(client);
 	}

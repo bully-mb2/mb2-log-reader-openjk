@@ -349,6 +349,7 @@ gotnewcl:
 	newcl->lastUserInfoCount = 0; //reset the count
 
 #ifdef DEDICATED
+	newcl->chatLogPolicySentTime = 0;
 	newcl->chatLogPolicySent = qfalse;
 #endif
 
@@ -539,17 +540,21 @@ void SV_SendClientGameState( client_t *client ) {
 }
 
 #ifdef DEDICATED
-QINLINE void SV_SendClientChatLogPolicy( client_t *client ) {
+void SV_SendClientChatLogPolicy( client_t *client ) {
 	if (!com_logChat || com_logChat->integer >= 2)
 		return;
 
 	if (!svs.gameLoggingEnabled && (!com_logfile || !com_logfile->integer))
 		return;
 
-	if (svs.servermod == SVMOD_UNKNOWN && svs.servermod == SVMOD_MBII)
+	if (svs.servermod == SVMOD_UNKNOWN)
+		return;
+
+	if (svs.time - client->chatLogPolicySentTime <= 5000) //don't send more than once every 5 seconds
 		return;
 
 	SV_SendServerCommand(client, "print \"%sThis server logs %s chat messages\n\"", S_COLOR_CYAN, com_logChat->integer == 1 ? "all public and team" : "no");
+	client->chatLogPolicySentTime = svs.time;
 	client->chatLogPolicySent = qtrue;
 }
 #endif
@@ -1837,8 +1842,8 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 	if ( cl->state == CS_PRIMED ) {
 		SV_ClientEnterWorld( cl, &cmds[0] );
 		// the moves can be processed normaly
-#if 0//def DEDICATED //triggers message after loading in
-		if (!cl->chatLogPolicySent) {
+#ifdef DEDICATED //triggers message after loading in
+		if (!cl->chatLogPolicySent && svs.servermod == SVMOD_MBII) {
 			SV_SendClientChatLogPolicy(cl);
 		}
 #endif
