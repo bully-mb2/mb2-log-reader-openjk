@@ -1272,7 +1272,7 @@ void Com_Init( char *commandLine ) {
 
 #ifdef DEDICATED
 		com_logChat = Cvar_Get( "com_logChat", "0", CVAR_NONE ); //0 - log nothing, 1 - log all but pm/tell messages, 2 - log all chat (baseJKA)
-		com_printAllMessages = Cvar_Get( "com_printAllMessages", "0", CVAR_INTERNAL ); //hidden cvar for debugging
+		com_printAllMessages = Cvar_Get( "com_printAllMessages", "0", CVAR_TEMP|CVAR_INTERNAL ); //hidden cvar for debugging
 #endif
 
 		com_bootlogo = Cvar_Get( "com_bootlogo", "1", CVAR_ARCHIVE_ND, "Show intro movies" );
