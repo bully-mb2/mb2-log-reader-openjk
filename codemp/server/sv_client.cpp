@@ -316,6 +316,16 @@ gotnewcl:
 	Q_strncpyz( newcl->userinfo, userinfo, sizeof(newcl->userinfo) );
 
 	// get the game a chance to reject this connection or modify the userinfo
+	#ifdef DEDICATED
+    if (svs.servermod == SVMOD_JAPLUS && Cvar_VariableIntegerValue("g_teamAutoJoin")
+        && !Cvar_VariableIntegerValue("g_gametype") && Cvar_VariableIntegerValue("jp_teamLock") & (1<<2)) //i guess?
+    {
+        char *team = Info_ValueForKey(userinfo, "team");
+        if (VALIDSTRING(team) && team[0] == 's')
+            Info_SetValueForKey(userinfo, "team", "f");
+    }
+    #endif
+	
 	denied = GVM_ClientConnect( clientNum, qtrue, qfalse ); // firstTime = qtrue
 	if ( denied ) {
 		NET_OutOfBandPrint( NS_SERVER, from, "print\n%s\n", denied );
