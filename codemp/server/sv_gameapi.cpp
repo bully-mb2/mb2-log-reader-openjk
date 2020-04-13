@@ -2862,7 +2862,7 @@ void SV_InitGame( qboolean restart ) {
 				svs.servermod = SVMOD_OPENJK;
 			}
 			else {
-				Com_DPrintf("%sUnsupported mod detected (%s) - some server engine features will be unavailable\n", S_COLOR_YELLOW, gamename);
+				Com_DPrintf(S_COLOR_YELLOW "Unsupported mod detected (%s) - some server engine features will be unavailable\n", gamename);
 			}
 		}
 	}

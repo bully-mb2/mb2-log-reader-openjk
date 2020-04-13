@@ -197,6 +197,7 @@ typedef struct client_s {
 
 #ifdef DEDICATED
 	qboolean		disableDuelCull;	//set for clients with "Duel see others" option set in cp_pluginDisable on JA+ servers
+	qboolean		jpPlugin;
 										//kms...
 	qboolean		unfixPing;			//set to true when client is estimated to have sent less than 60 packets in the last second,
 										//and falls back to baseJKA ping calculation when calculating it for this client
