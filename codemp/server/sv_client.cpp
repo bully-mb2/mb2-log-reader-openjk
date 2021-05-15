@@ -1360,7 +1360,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 			Com_Printf("%sDetected DST injection from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
 			if (sv_antiDST->integer) {
 				//SV_DropClient(cl, "was dropped by TnG!");
-				SV_DropClient(cl, "was kicked for cheating by JKA.io");
+				SV_DropClient(cl, "was kicked for cheating by the server.");
 				cl->lastPacketTime = svs.time;
 			}
 		}
@@ -1534,7 +1534,7 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 		{
 			u->func(cl);
 			bProcessed = qtrue;
-			
+
 			break;
 		}
 	}
@@ -1544,7 +1544,7 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 		Com_Printf("%sDetected DST command from client %s%s\n", S_COLOR_RED, S_COLOR_WHITE, cl->name);
 		if (sv_antiDST->integer) {
 			//SV_DropClient(cl, "was dropped by TnG!");
-			SV_DropClient(cl, "was kicked for cheating by JKA.io");
+			SV_DropClient(cl, "was kicked for cheating by the server.");
 			cl->lastPacketTime = svs.time;
 		}
 	}
