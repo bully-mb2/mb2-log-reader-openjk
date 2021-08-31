@@ -163,7 +163,7 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 		//well, doesn't that change depending on what mod is running? i think mb2 adds sender and receiver to PMs...
 		if (Q_stristr(msg, "^7\x19: "))
 			logThis = qfalse;
-		if (!com_logChat->integer && (Q_stristr(msg, "say: ") || Q_stristr(msg, "sayteam: ") || Q_stristr(msg, "tell: "))) //0 - log nothing
+		if (!com_logChat->integer && (Q_stristr(msg, "say: ") || Q_stristr(msg, "sayteam: ") || Q_stristr(msg, "say_clan: ") || Q_stristr(msg, "say_admin: ") || Q_stristr(msg, "tell: "))) //0 - log nothing
 			logThis = qfalse;
 		if (com_logChat->integer == 1 && Q_stristr(msg, "tell: ")) //1 - only log public/team chat
 			logThis = qfalse; //return len so it thinks the write was successful
