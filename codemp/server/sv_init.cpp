@@ -982,7 +982,7 @@ void SV_Init (void) {
 	sv_snapsPolicy = Cvar_Get ("sv_snapsPolicy", "2", CVAR_ARCHIVE_ND, "Determines which policy of enforcement is used for client's \"snaps\" cvar");
 	Cvar_CheckRange(sv_snapsPolicy, 0, 2, qtrue);
 	sv_fps = Cvar_Get ("sv_fps", "40", CVAR_SERVERINFO, "Server frames per second" );
-	Cvar_CheckRange(sv_fps, 0, 1000, qtrue);
+	Cvar_CheckRange(sv_fps, 0, 125, qtrue);
 	sv_timeout = Cvar_Get ("sv_timeout", "200", CVAR_TEMP );
 	sv_zombietime = Cvar_Get ("sv_zombietime", "2", CVAR_TEMP );
 	Cvar_Get ("nextmap", "", CVAR_TEMP );
@@ -1022,7 +1022,7 @@ void SV_Init (void) {
 
 	sv_hibernateTime = Cvar_Get("sv_hibernateTime", "0", CVAR_ARCHIVE_ND, "Time after which server will enter hibernation mode");
 	sv_hibernateFPS = Cvar_Get("sv_hibernateFPS", "2", CVAR_ARCHIVE_ND, "FPS during hibernation mode");
-	Cvar_CheckRange(sv_hibernateFPS, 1, 1000, qtrue);
+	Cvar_CheckRange(sv_hibernateFPS, 1, 125, qtrue);
 
 	sv_maxOOBRate = Cvar_Get("sv_maxOOBRate", "1000", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands" );
 	sv_maxOOBRateIP = Cvar_Get("sv_maxOOBRateIP", "1", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands per IP address" );
