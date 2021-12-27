@@ -83,6 +83,9 @@ int			com_frameNumber;
 qboolean	com_errorEntered = qfalse;
 qboolean	com_fullyInitialized = qfalse;
 
+netadr_t logremote_addr;
+qboolean logremote_rdy = qfalse;
+
 char	com_errorMessage[MAXPRINTMSG] = {0};
 
 void Com_WriteConfig_f( void );
@@ -152,6 +155,16 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 
 	// echo to dedicated console and early console
 	Sys_Print( msg );
+
+	// remote
+	if ( logremote_rdy ) {
+		if (Sys_SendPacket_Status(strlen(msg) + 1, msg, logremote_addr) == -1) {
+			logremote_rdy = qfalse;
+			Com_Printf("\n^1=== logremote ===\n");
+			Com_Printf("^1Tried to log remote but was unable\n");
+			Com_Printf("^1=================\n\n");
+		}
+	}
 
 	// logfile
 	if ( com_logfile && com_logfile->integer ) {
@@ -499,6 +512,23 @@ void Info_Print( const char *s ) {
 			s++;
 		Com_Printf ("%s\n", value);
 	}
+}
+
+/*
+============
+Com_SetRemoteLogAddr
+============
+*/
+void Com_SetRemoteLogAddr( char* newAddr ) {
+	if (strlen(newAddr) < 1) {
+		return;
+	}
+
+	if (!strcmp(newAddr, "0")) {
+		return;
+	}
+
+	logremote_rdy = NET_StringToAdr(newAddr, &logremote_addr);
 }
 
 /*
