@@ -354,6 +354,52 @@ void Sys_SendPacket( int length, const void *data, netadr_t to ) {
 	}
 }
 
+/*
+==================
+Sys_SendPacket_Status
+==================
+*/
+int Sys_SendPacket_Status(int length, const void *data, netadr_t to) {
+	int					ret;
+	struct sockaddr_in	addr;
+
+	if (to.type != NA_BROADCAST && to.type != NA_IP) {
+		Com_Error(ERR_FATAL, "Sys_SendPacket: bad address type");
+		return 0;
+	}
+
+	if (ip_socket == INVALID_SOCKET) {
+		return 0;
+	}
+
+	NetadrToSockadr(&to, &addr);
+
+	if (usingSocks && to.type == NA_IP) {
+		socksBuf[0] = 0;	// reserved
+		socksBuf[1] = 0;
+		socksBuf[2] = 0;	// fragment (not fragmented)
+		socksBuf[3] = 1;	// address type: IPV4
+		memcpy(&socksBuf[4], &addr.sin_addr, 4);
+		memcpy(&socksBuf[8], &addr.sin_port, 2);
+		memcpy(&socksBuf[10], data, length);
+		ret = sendto(ip_socket, socksBuf, length + 10, 0, (sockaddr *)&socksRelayAddr, sizeof(socksRelayAddr));
+	}
+	else {
+		ret = sendto(ip_socket, (const char *)data, length, 0, (sockaddr *)&addr, sizeof(addr));
+	}
+
+	if (ret == SOCKET_ERROR) {
+		int err = socketError;
+
+		// wouldblock is silent
+		if (err == EAGAIN) {
+			return 0;
+		}
+	}
+
+	return ret;
+}
+
 //=============================================================================
 
 /*

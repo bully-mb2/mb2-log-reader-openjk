@@ -150,6 +150,7 @@ qboolean	NET_GetLoopPacket (netsrc_t sock, netadr_t *net_from, msg_t *net_messag
 void		NET_Sleep(int msec);
 
 void		Sys_SendPacket( int length, const void *data, netadr_t to );
+int			Sys_SendPacket_Status( int length, const void *data, netadr_t to );
 //Does NOT parse port numbers, only base addresses.
 qboolean	Sys_StringToAdr( const char *s, netadr_t *a );
 qboolean	Sys_IsLANAddress (netadr_t adr);
@@ -752,6 +753,7 @@ void		Com_EndRedirect( void );
 void 		QDECL Com_Printf( const char *fmt, ... );
 void 		QDECL Com_DPrintf( const char *fmt, ... );
 void		QDECL Com_OPrintf( const char *fmt, ...); // Outputs to the VC / Windows Debug window (only in debug compile)
+void		Com_SetRemoteLogAddr( char *newAddr );
 void 		NORETURN QDECL Com_Error( int code, const char *fmt, ... );
 void 		NORETURN Com_Quit_f( void );
 int			Com_EventLoop( void );
