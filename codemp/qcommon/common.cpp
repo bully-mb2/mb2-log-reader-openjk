@@ -72,6 +72,10 @@ cvar_t	*com_busyWait;
 
 cvar_t *com_affinity;
 
+#ifdef _WIN32
+cvar_t  *com_steamIntegration;
+#endif
+
 // com_speeds times
 int		time_game;
 int		time_frontend;		// renderer frontend time
@@ -1168,6 +1172,12 @@ void Com_Init( char *commandLine ) {
 
 		FS_InitFilesystem ();
 
+#ifdef _WIN32
+		com_steamIntegration = Cvar_Get("com_steamIntegration", "0", CVAR_ARCHIVE_ND);
+#endif
+
+		Sys_SteamInit();
+
 		Com_InitJournaling();
 
 		// Add some commands here already so users can use them from config files
@@ -1676,6 +1686,8 @@ void Com_Shutdown (void)
 		FS_FCloseFile( com_journalFile );
 		com_journalFile = 0;
 	}
+
+	Sys_SteamShutdown();
 
 	MSG_shutdownHuffman();
 /*

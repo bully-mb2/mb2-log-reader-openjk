@@ -486,6 +486,10 @@ void *Sys_LoadLegacyGameDll( const char *name, VMMainProc **vmMain, SystemCallPr
 		else
 		{
 			libHandle = Sys_LoadLibrary(unpackResult.tempDLLPath);
+			if (!libHandle)
+			{//probably "Not enough memory resources are available to process this command."
+				Com_Printf("^1Sys_LoadLibrary() FAILED for %s (%s)\n", name, Sys_LibraryError());
+			}
 		}
 
 		FreeUnpackDLLResult(&unpackResult);
@@ -617,6 +621,10 @@ void *Sys_LoadGameDll( const char *name, GetModuleAPIProc **moduleAPI )
 		else
 		{
 			libHandle = Sys_LoadLibrary(unpackResult.tempDLLPath);
+			if (!libHandle)
+			{//probably "Not enough memory resources are available to process this command."
+				Com_Printf("^1Sys_LoadLibrary() FAILED for %s (%s)\n", name, Sys_LibraryError());
+			}
 		}
 
 		FreeUnpackDLLResult(&unpackResult);

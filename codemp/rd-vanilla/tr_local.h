@@ -1228,6 +1228,8 @@ extern	cvar_t	*r_marksOnTriangleMeshes;
 
 extern	cvar_t	*r_aspectCorrectFonts;
 
+extern	cvar_t	*r_aspectCorrectRotatePic2;
+
 /*
 Ghoul2 Insert Start
 */

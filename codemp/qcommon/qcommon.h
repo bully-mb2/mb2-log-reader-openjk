@@ -213,11 +213,11 @@ PROTOCOL
 
 #define	PROTOCOL_VERSION	26
 
-#define	UPDATE_SERVER_NAME			"updatejk3.ravensoft.com"
-#define MASTER_SERVER_NAME			"masterjk3.ravensoft.com"
+#define	UPDATE_SERVER_NAME			"master.moviebattles.org"
+#define MASTER_SERVER_NAME			"master.moviebattles.org"
 
-#define JKHUB_MASTER_SERVER_NAME	"master.jkhub.org"
-#define JKHUB_UPDATE_SERVER_NAME	"update.jkhub.org"
+#define	BACKUP_UPDATE_SERVER_NAME	"master2.moviebattles.org"
+#define BACKUP_MASTER_SERVER_NAME	"master2.moviebattles.org"
 
 #define	PORT_MASTER			29060
 #define	PORT_UPDATE			29061
