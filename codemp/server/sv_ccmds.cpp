@@ -1292,6 +1292,92 @@ static void SV_ConTell_f(void) {
 	SV_SendServerCommand(cl, "chat \"" SVTELL_PREFIX S_COLOR_MAGENTA "%s" S_COLOR_WHITE "\"\n", text);
 }
 
+/*
+==================
+SV_ConPrint_f
+==================
+*/
+static void SV_ConPrint_f(void) {
+	char	text[MAX_SAY_TEXT] = { 0 };
+	char		*target;
+	client_t	*cl;
+
+	if (!com_dedicated->integer) {
+		Com_Printf("Server is not dedicated.\n");
+		return;
+	}
+
+	// make sure server is running
+	if (!com_sv_running->integer) {
+		Com_Printf("Server is not running.\n");
+		return;
+	}
+
+	if (Cmd_Argc() < 3) {
+		Com_Printf("Usage: svprint <client number or 'all'> <text>\n");
+		return;
+	}
+
+	target = Cmd_Argv(1);
+	Cmd_ArgsFromBuffer(2, text, sizeof(text));
+	if (!Q_stricmp("all", target)) {
+		cl = NULL;
+		Com_Printf("print: svprint to all" S_COLOR_WHITE ": %s\n", SV_ExpandNewlines((char *)text));
+	} else {
+		cl = SV_GetPlayerByNum();
+		if (!cl) {
+			return;
+		}
+
+		Com_Printf("print: svprint to %s" S_COLOR_WHITE ": %s\n", cl->name, SV_ExpandNewlines((char *)text));
+	}
+
+	SV_SendServerCommand(cl, "chat \"%s" S_COLOR_WHITE "\"\n", text);
+}
+
+/*
+==================
+SV_ConPrintCon_f
+==================
+*/
+static void SV_ConPrintCon_f(void) {
+	char	text[MAX_SAY_TEXT] = { 0 };
+	char		*target;
+	client_t	*cl;
+
+	if (!com_dedicated->integer) {
+		Com_Printf("Server is not dedicated.\n");
+		return;
+	}
+
+	// make sure server is running
+	if (!com_sv_running->integer) {
+		Com_Printf("Server is not running.\n");
+		return;
+	}
+
+	if (Cmd_Argc() < 3) {
+		Com_Printf("Usage: svprintcon <client number or 'all'> <text>\n");
+		return;
+	}
+
+	target = Cmd_Argv(1);
+	Cmd_ArgsFromBuffer(2, text, sizeof(text));
+	if (!Q_stricmp("all", target)) {
+		cl = NULL;
+		Com_Printf("print: svprintcon to all" S_COLOR_WHITE ": %s\n", SV_ExpandNewlines((char *)text));
+	} else {
+		cl = SV_GetPlayerByNum();
+		if (!cl) {
+			return;
+		}
+
+		Com_Printf("print: svprintcon to %s" S_COLOR_WHITE ": %s\n", cl->name, SV_ExpandNewlines((char *)text));
+	}
+
+	SV_SendServerCommand(cl, "print \"%s" S_COLOR_WHITE "\n\"\n", text);
+}
+
 const char *forceToggleNamePrints[NUM_FORCE_POWERS] = {
 	"HEAL",
 	"JUMP",
@@ -1978,6 +2064,8 @@ void SV_AddOperatorCommands( void ) {
 	Cmd_AddCommand ("killserver", SV_KillServer_f, "Shuts the server down and disconnects all clients" );
 	Cmd_AddCommand ("svsay", SV_ConSay_f, "Broadcast server messages to clients" );
 	Cmd_AddCommand ("svtell", SV_ConTell_f, "Private message from the server to a user" );
+	Cmd_AddCommand ("svprint", SV_ConPrint_f, "Target a message from the server to specific client or all clients without a prefix");
+	Cmd_AddCommand( "svprintcon", SV_ConPrintCon_f, "Target a message from the server to specific client or all clients without a prefix in their console" );
 	Cmd_AddCommand ("forcetoggle", SV_ForceToggle_f, "Toggle g_forcePowerDisable bits" );
 	Cmd_AddCommand ("weapontoggle", SV_WeaponToggle_f, "Toggle g_weaponDisable bits" );
 	Cmd_AddCommand ("svrecord", SV_Record_f, "Record a server-side demo" );

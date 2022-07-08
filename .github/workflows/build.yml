@@ -3,103 +3,127 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: master
-  pull_request:
-    branches: master
+    branches: [master, experimental]
 
 jobs:
-  vs2019:
-    name: Build VS 2019, ${{ matrix.build_type }}, ${{ matrix.arch }}
-    runs-on: windows-2019
+
+  vs2013_xp:
+    name: Build VS 2013, Windows XP, ${{ matrix.build_type }}
+    runs-on: [self-hosted, windows]
     strategy:
       matrix:
-        build_type: [Debug, RelWithDebInfo]
-        arch: [Win32, x64]
+        build_type: [Release, RelWithDebInfo]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
-
     - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
+      run:  cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMake
-      shell: bash
+      shell: powershell
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -A ${{ matrix.arch }}
+      run: cmake $env:GITHUB_WORKSPACE -A Win32 -T v120_xp -DBuildPortableVersion=ON
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      shell: bash
+      shell: powershell
       run: cmake --build . --config ${{ matrix.build_type }}
+      
+    - name: Set LAA
+      working-directory: "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\bin" 
+      shell: powershell
+      run: ./editbin.exe /largeaddressaware ${{runner.workspace}}/build/${{ matrix.build_type }}/mbii.x86.exe
 
-  vs2017_xp:
-    name: Build VS 2017, Windows XP
-    runs-on: windows-2016
-
+    - name: Upload Build
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        name: Windows Build ${{ matrix.build_type }}
+        path: ${{runner.workspace}}/build/${{ matrix.build_type }}
+        
+  win_cleanup:
+    name: Cleanup Windows Builds
+    runs-on: [self-hosted, windows]
+    needs: vs2013_xp
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
-
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
-
-    - name: Configure CMake
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -A Win32 -T v141_xp
-
-    - name: Build
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build . --config RelWithDebInfo
-
-  macos:
-    name: Build macOS AppleClang
-    runs-on: macos-10.15
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Create Build Environment
-      run: |
-        brew install zlib libjpeg libpng sdl2
-        cmake -E make_directory ${{runner.workspace}}/build
-    - name: Configure CMake
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RelWithDebInfo
-
-    - name: Build
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build .
+      - name: Move Build Folder
+        run: | 
+          cmake -E remove_directory ${{runner.workspace}}/lastbuild
+          cmake -E rename ${{runner.workspace}}/build ${{runner.workspace}}/lastbuild
 
   linux:
-    name: Build Linux, ${{ matrix.build_type }}
-    runs-on: ubuntu-20.04
+    name: Build Linux Client, ${{ matrix.build_type }}
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
-        build_type: [Debug, RelWithDebInfo]
+        build_type: [Release]
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Create Build Environment
       run: |
+        sudo dpkg --add-architecture i386
         sudo apt-get update
-        sudo apt-get install libjpeg-dev libpng-dev zlib1g-dev libsdl2-dev
+        sudo apt-get install build-essential cmake gcc-multilib g++-multilib libjpeg-dev:i386 libpng-dev:i386 zlib1g-dev:i386 libsdl2-dev:i386
         cmake -E make_directory ${{runner.workspace}}/build
+        
     - name: Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      run: >
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchains/linux-i686.cmake
+        -DBuildMPDed=OFF -DBuildMPEngine=ON -DBuildMPRdVanilla=ON -DBuildMPCGame=OFF
+        -DBuildMPUI=OFF -DBuildSPEngine=OFF -DBuildSPGame=OFF -DBuildSPRdVanilla=OFF
+        -DUseInternalPNG=ON -DUseInternalJPEG=ON
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: |
+        cmake --build .
+        mv codemp/rd-vanilla/rd-vanilla-mbii_i386.so .
+      
+    - name: Upload Build
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        name: Linux Client Build ${{ matrix.build_type }}
+        path: |
+          ${{runner.workspace}}/build/*.i386
+          ${{runner.workspace}}/build/*.so
+
+  linux-old:
+    name: Build Linux Server, ${{ matrix.build_type }}
+    runs-on:  [self-hosted, linux]
+    strategy:
+      matrix:
+        build_type: [Release]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+      
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: >
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchains/linux-i686.cmake
+        -DBuildMPDed=ON -DBuildMPEngine=OFF -DBuildMPRdVanilla=OFF -DBuildMPCGame=OFF
+        -DBuildMPUI=OFF -DBuildSPEngine=OFF -DBuildSPGame=OFF -DBuildSPRdVanilla=OFF
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build .
+      
+    - name: Upload Build
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        name: Linux Server Build ${{ matrix.build_type }}
+        path: ${{runner.workspace}}/build/*.i386
+        
+        

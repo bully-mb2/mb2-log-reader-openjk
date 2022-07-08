@@ -118,6 +118,8 @@ void GVM_ClientThink( int clientNum, usercmd_t *ucmd ) {
 }
 
 void GVM_RunFrame( int levelTime ) {
+	if (!gvm)
+		return;
 	if ( gvm->isLegacy ) {
 		VM_Call( gvm, GAME_RUN_FRAME, levelTime );
 		return;
@@ -400,6 +402,23 @@ int GVM_BG_GetItemIndexByTag( int tag, int type ) {
 
 	return ge->BG_GetItemIndexByTag( tag, type );
 }
+
+#ifdef DEDICATED
+int GVM_FS_Write(const void *buffer, int len, fileHandle_t f)
+{ //wrapper function to filter things out of log files
+	char *msg = (char *)buffer;
+
+	if (com_logChat && com_logChat->integer < 2 && msg)
+	{
+		if (!com_logChat->integer && (Q_stristr(msg, "say: ") || Q_stristr(msg, "sayteam: ") || Q_stristr(msg, "tell: "))) //0 - log nothing
+			return len;
+		if (com_logChat->integer == 1 && Q_stristr(msg, "tell: ")) //1 - only log public/team chat
+			return len; //return len so it thinks the write was successful
+	}
+
+	return FS_Write(buffer, len, f);
+}
+#endif
 
 //
 // game syscalls
@@ -1868,7 +1887,11 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 		return 0;
 
 	case G_FS_WRITE:
+#ifndef DEDICATED
 		FS_Write( VMA(1), args[2], args[3] );
+#else
+		GVM_FS_Write( VMA(1), args[2], args[3] );
+#endif
 		return 0;
 
 	case G_FS_FCLOSE_FILE:
@@ -2790,6 +2813,15 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 void SV_InitGame( qboolean restart ) {
 	int i=0;
 	client_t *cl = NULL;
+#ifdef DEDICATED
+	cvar_t *g_log = Cvar_Get("g_log", "games.log", CVAR_NONE, "");
+
+	if (g_log)
+		Cvar_Unset(g_log); //unset this when reloading game module...
+	g_log = NULL;
+
+	svs.gameLoggingEnabled = qfalse;
+#endif
 
 	// clear level pointers
 	sv.entityParsePoint = CM_EntityString();
@@ -2797,6 +2829,52 @@ void SV_InitGame( qboolean restart ) {
 		cl->gentity = NULL;
 
 	GVM_InitGame( sv.time, Com_Milliseconds(), restart );
+
+	svs.servermod = SVMOD_UNKNOWN;
+	if (sv_legacyFixes->integer) {
+		char *gamename = Cvar_VariableString("gamename");
+
+		if (!gamename || !VALIDSTRING(gamename))
+		{
+			svs.servermod = SVMOD_UNKNOWN;
+			Com_DPrintf("%sFailed to detect loaded mod!\n", S_COLOR_RED);
+		}
+		else
+		{
+			Com_DPrintf("%sDetected mod: %s\n", S_COLOR_CYAN, gamename);
+
+			if (!Q_stricmpn(gamename, "basejk", 6)) {
+				if (gvm && !gvm->isLegacy)
+					svs.servermod = SVMOD_OPENJK; //some OpenJK forks rename themselves to basejka
+				else
+					svs.servermod = SVMOD_BASEJKA;
+			}
+			else if (!Q_stricmpn(gamename, "JA+", 3)) {
+				svs.servermod = SVMOD_JAPLUS;
+			}
+			else if (!Q_stricmpn(gamename, "Movie Battles", 13)) {
+				svs.servermod = SVMOD_MBII;
+			}
+			else if (!Q_stricmpn(gamename, "japro", 5)) {
+				svs.servermod = SVMOD_JAPRO;
+			}
+			else if (!Q_stricmpn(gamename, "OpenJK", 6)) {
+				svs.servermod = SVMOD_OPENJK;
+			}
+			else {
+				Com_DPrintf(S_COLOR_YELLOW "Unsupported mod detected (%s) - some server engine features will be unavailable\n", gamename);
+			}
+		}
+	}
+
+#ifdef DEDICATED
+	g_log = Cvar_Get("g_log", "games.log", CVAR_NONE, ""); //check again now
+	if (g_log && g_log->string && g_log->string[0] && VALIDSTRING(g_log->string)) {
+		svs.gameLoggingEnabled = qtrue;
+		Com_DPrintf(S_COLOR_CYAN "Game logging to %s\n", g_log->string);
+	}
+	g_log = NULL;
+#endif
 }
 
 void SV_BindGame( void ) {
@@ -2830,7 +2908,11 @@ void SV_BindGame( void ) {
 		gi.FS_GetFileList						= FS_GetFileList;
 		gi.FS_Open								= FS_FOpenFileByMode;
 		gi.FS_Read								= FS_Read;
+#ifdef DEDICATED
+		gi.FS_Write								= GVM_FS_Write;
+#else
 		gi.FS_Write								= FS_Write;
+#endif
 		gi.AdjustAreaPortalState				= SV_AdjustAreaPortalState;
 		gi.AreasConnected						= CM_AreasConnected;
 		gi.DebugPolygonCreate					= BotImport_DebugPolygonCreate;
@@ -3128,10 +3210,12 @@ void SV_BindGame( void ) {
 		}
 		ge = ret;
 
+		svs.gvmIsLegacy = qfalse;
 		return;
 	}
 
 	// fall back to legacy syscall/vm_call api
+	svs.gvmIsLegacy = qtrue;
 	gvm = VM_CreateLegacy( VM_GAME, SV_GameSystemCalls );
 	if ( !gvm ) {
 		svs.gameStarted = qfalse;
@@ -3139,10 +3223,20 @@ void SV_BindGame( void ) {
 	}
 }
 
-void SV_UnbindGame( void ) {
+void SV_UnbindGame( void )
+{
+	cvar_t *gamename = Cvar_Get("gamename", "", CVAR_SERVERINFO, "");
+
 	GVM_ShutdownGame( qfalse );
 	VM_Free( gvm );
 	gvm = NULL;
+
+	//reset gamename cvar here so that it stays up to date in-case we switch out mods or something.
+	if (gamename && gamename->string[0] && strlen(gamename->string)) {
+		Cvar_Unset(gamename);
+		gamename = NULL;
+	}
+	svs.gvmIsLegacy = qfalse;
 }
 
 void SV_RestartGame( void ) {

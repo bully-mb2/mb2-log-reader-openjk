@@ -3303,6 +3303,9 @@ void FS_Shutdown( qboolean closemfp ) {
 		fclose(missingFiles);
 	}
 #endif
+
+	if (closemfp) //not restarting
+		Cmd_RemoveCommand("fs_restart");
 }
 
 //rww - add search paths in for received svc_setgame
@@ -3402,6 +3405,18 @@ void FS_Startup( const char *gameName ) {
 	}
 	fs_homepath = Cvar_Get ("fs_homepath", homePath, CVAR_INIT|CVAR_PROTECTED, "(Read/Write) Location for user generated files" );
 	fs_gamedirvar = Cvar_Get ("fs_game", "", CVAR_INIT|CVAR_SYSTEMINFO, "Mod directory" );
+
+	if (strcmp(fs_homepath->string, ".") == 0) {
+		Com_Printf("Homepath: %s\n", fs_basepath->string);
+	}
+	else {
+		if (fs_homepath->string[0]) {
+			Com_Printf("Homepath: %s\n", fs_homepath->string);
+		}
+		else {
+			Com_Printf( S_COLOR_YELLOW "Homepath is empty, user generated files will be on the root of the drive!\n");
+		}
+	}
 
 	fs_dirbeforepak = Cvar_Get("fs_dirbeforepak", "0", CVAR_INIT|CVAR_PROTECTED, "Prioritize directories before paks if not pure" );
 
@@ -3813,6 +3828,7 @@ Called only at inital startup, not when the filesystem
 is resetting due to a game change
 ================
 */
+static void FS_Restart_f(void);
 void FS_InitFilesystem( void ) {
 	// allow command line parms to override our defaults
 	// we have to specially handle this, because normal command
@@ -3828,8 +3844,13 @@ void FS_InitFilesystem( void ) {
 	Com_StartupVariable( "fs_apppath" );
 #endif
 
+	if (Cvar_VariableString("fs_game") == "")
+		Cvar_Set("fs_game", "MBII");
+
 	if(!FS_FilenameCompare(Cvar_VariableString("fs_game"), BASEGAME))
 		Cvar_Set("fs_game", "");
+
+	Cmd_AddCommand("fs_restart", FS_Restart_f, "Restarts the filesystem loading any new paks to search paths");
 
 	// try to start up normally
 	FS_Startup( BASEGAME );
@@ -3934,6 +3955,16 @@ qboolean FS_ConditionalRestart( int checksumFeed ) {
 		FS_ReorderPurePaks();
 #endif
 	return qfalse;
+}
+
+/*
+=================
+FS_Restart_f
+Console command to restart filesystem.
+=================
+*/
+static void FS_Restart_f(void) {
+	FS_Restart(fs_checksumFeed);
 }
 
 /*

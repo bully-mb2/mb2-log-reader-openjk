@@ -422,14 +422,28 @@ int LAN_CompareServers( int source, int sortKey, int sortDir, int s1, int s2 ) {
 			}
 			break;
 		case SORT_GAME:
-			if (server1->gameType < server2->gameType) {
-				res = -1;
-			}
-			else if (server1->gameType > server2->gameType) {
-				res = 1;
+			if (strstr(Cvar_VariableString("fs_game"), "MBII")) {
+				// MBII servers share their current mode using fdisable, so sort by that instead of g_gametype (always siege).
+				if (server1->forceDisable < server2->forceDisable) {
+					res = -1;
+				}
+				else if (server1->forceDisable > server2->forceDisable) {
+					res = 1;
+				}
+				else {
+					res = 0;
+				}
 			}
 			else {
-				res = 0;
+				if (server1->gameType < server2->gameType) {
+					res = -1;
+				}
+				else if (server1->gameType > server2->gameType) {
+					res = 1;
+				}
+				else {
+					res = 0;
+				}
 			}
 			break;
 		case SORT_PING:

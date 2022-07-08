@@ -70,7 +70,16 @@ cvar_t	*com_ansiColor = NULL;
 #endif
 cvar_t	*com_busyWait;
 
-cvar_t *com_affinity;
+cvar_t	*com_affinity;
+
+#ifdef DEDICATED
+cvar_t	*com_logChat;
+cvar_t	*com_printAllMessages;
+#endif
+
+#ifdef _WIN32
+cvar_t  *com_steamIntegration;
+#endif
 
 // com_speeds times
 int		time_game;
@@ -82,6 +91,9 @@ int			com_frameNumber;
 
 qboolean	com_errorEntered = qfalse;
 qboolean	com_fullyInitialized = qfalse;
+
+netadr_t logremote_addr;
+qboolean logremote_rdy = qfalse;
 
 char	com_errorMessage[MAXPRINTMSG] = {0};
 
@@ -129,6 +141,9 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 	va_list		argptr;
 	char		msg[MAXPRINTMSG];
 	static qboolean opening_qconsole = qfalse;
+#ifdef DEDICATED
+	qboolean logThis = qtrue;
+#endif
 
 	va_start (argptr,fmt);
 	Q_vsnprintf (msg, sizeof(msg), fmt, argptr);
@@ -146,12 +161,39 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 		return;
 	}
 
-#ifndef DEDICATED
+#ifdef DEDICATED
+	if (com_logChat&& com_printAllMessages && com_logChat->integer < 2)
+	{
+		//so console log shows the say/sayteam/tell command being received,
+		//but it also shows the "chat" command as it goes out, so we'll just filter all of those out
+		//TODO: determine what type of message it is based on the contents of the chat cmd, so we don't filter out chat messages from mods/custom entities
+		//well, doesn't that change depending on what mod is running? i think mb2 adds sender and receiver to PMs...
+		if (Q_stristr(msg, "^7\x19: "))
+			logThis = qfalse;
+		if (!com_logChat->integer && (Q_stristr(msg, "say: ") || Q_stristr(msg, "sayteam: ") || Q_stristr(msg, "say_clan: ") || Q_stristr(msg, "say_admin: ") || Q_stristr(msg, "tell: "))) //0 - log nothing
+			logThis = qfalse;
+		if (com_logChat->integer == 1 && Q_stristr(msg, "tell: ")) //1 - only log public/team chat
+			logThis = qfalse; //return len so it thinks the write was successful
+
+		if (!logThis && !com_printAllMessages->integer)
+			return;
+	}
+#else
 	CL_ConsolePrint( msg );
 #endif
 
 	// echo to dedicated console and early console
 	Sys_Print( msg );
+
+	// remote
+	if ( logremote_rdy ) {
+		if (Sys_SendPacket_Status(strlen(msg) + 1, msg, logremote_addr) == -1) {
+			logremote_rdy = qfalse;
+			Com_Printf("\n^1=== logremote ===\n");
+			Com_Printf("^1Tried to log remote but was unable\n");
+			Com_Printf("^1=================\n\n");
+		}
+	}
 
 	// logfile
 	if ( com_logfile && com_logfile->integer ) {
@@ -182,7 +224,11 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 			}
 		}
 		opening_qconsole = qfalse;
-		if ( logfile && FS_Initialized()) {
+#ifdef DEDICATED
+		if ( logThis && logfile && FS_Initialized() ) {
+#else
+		if ( logfile && FS_Initialized() ) {
+#endif
 			FS_Write(msg, strlen(msg), logfile);
 		}
 	}
@@ -499,6 +545,23 @@ void Info_Print( const char *s ) {
 			s++;
 		Com_Printf ("%s\n", value);
 	}
+}
+
+/*
+============
+Com_SetRemoteLogAddr
+============
+*/
+void Com_SetRemoteLogAddr( char* newAddr ) {
+	if (strlen(newAddr) < 1) {
+		return;
+	}
+
+	if (!strcmp(newAddr, "0")) {
+		return;
+	}
+
+	logremote_rdy = NET_StringToAdr(newAddr, &logremote_addr);
 }
 
 /*
@@ -1168,6 +1231,12 @@ void Com_Init( char *commandLine ) {
 
 		FS_InitFilesystem ();
 
+#ifdef _WIN32
+		com_steamIntegration = Cvar_Get("com_steamIntegration", "0", CVAR_ARCHIVE_ND);
+#endif
+
+		Sys_SteamInit();
+
 		Com_InitJournaling();
 
 		// Add some commands here already so users can use them from config files
@@ -1177,6 +1246,7 @@ void Com_Init( char *commandLine ) {
 			Cmd_AddCommand ("freeze", Com_Freeze_f);
 		}
 		Cmd_AddCommand ("quit", Com_Quit_f, "Quits the game" );
+		Cmd_AddCommand ("exit", Com_Quit_f, "Exits the game" );
 #ifndef FINAL_BUILD
 		Cmd_AddCommand ("changeVectors", MSG_ReportChangeVectors_f );
 #endif
@@ -1239,6 +1309,11 @@ void Com_Init( char *commandLine ) {
 
 		com_affinity = Cvar_Get( "com_affinity", "0", CVAR_ARCHIVE_ND );
 		com_busyWait = Cvar_Get( "com_busyWait", "0", CVAR_ARCHIVE_ND );
+
+#ifdef DEDICATED
+		com_logChat = Cvar_Get( "com_logChat", "0", CVAR_NONE ); //0 - log nothing, 1 - log all but pm/tell messages, 2 - log all chat (baseJKA)
+		com_printAllMessages = Cvar_Get( "com_printAllMessages", "0", CVAR_TEMP|CVAR_INTERNAL ); //hidden cvar for debugging
+#endif
 
 		com_bootlogo = Cvar_Get( "com_bootlogo", "1", CVAR_ARCHIVE_ND, "Show intro movies" );
 
@@ -1403,7 +1478,7 @@ int Com_ModifyMsec( int msec ) {
 		// dedicated servers don't want to clamp for a much longer
 		// period, because it would mess up all the client's views
 		// of time.
-		if ( com_sv_running->integer && msec > 500 ) {
+		if ( !svs.hibernation.enabled && com_sv_running->integer && msec > 500 ) {
 			Com_Printf( "Hitch warning: %i msec frame time\n", msec );
 		}
 		clampTime = 5000;
@@ -1676,6 +1751,8 @@ void Com_Shutdown (void)
 		FS_FCloseFile( com_journalFile );
 		com_journalFile = 0;
 	}
+
+	Sys_SteamShutdown();
 
 	MSG_shutdownHuffman();
 /*

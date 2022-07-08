@@ -150,6 +150,7 @@ qboolean	NET_GetLoopPacket (netsrc_t sock, netadr_t *net_from, msg_t *net_messag
 void		NET_Sleep(int msec);
 
 void		Sys_SendPacket( int length, const void *data, netadr_t to );
+int			Sys_SendPacket_Status( int length, const void *data, netadr_t to );
 //Does NOT parse port numbers, only base addresses.
 qboolean	Sys_StringToAdr( const char *s, netadr_t *a );
 qboolean	Sys_IsLANAddress (netadr_t adr);
@@ -213,11 +214,11 @@ PROTOCOL
 
 #define	PROTOCOL_VERSION	26
 
-#define	UPDATE_SERVER_NAME			"updatejk3.ravensoft.com"
-#define MASTER_SERVER_NAME			"masterjk3.ravensoft.com"
+#define	UPDATE_SERVER_NAME			"master.moviebattles.org"
+#define MASTER_SERVER_NAME			"master.moviebattles.org"
 
-#define JKHUB_MASTER_SERVER_NAME	"master.jkhub.org"
-#define JKHUB_UPDATE_SERVER_NAME	"update.jkhub.org"
+#define	BACKUP_UPDATE_SERVER_NAME	"master2.moviebattles.org"
+#define BACKUP_MASTER_SERVER_NAME	"master2.moviebattles.org"
 
 #define	PORT_MASTER			29060
 #define	PORT_UPDATE			29061
@@ -752,6 +753,7 @@ void		Com_EndRedirect( void );
 void 		QDECL Com_Printf( const char *fmt, ... );
 void 		QDECL Com_DPrintf( const char *fmt, ... );
 void		QDECL Com_OPrintf( const char *fmt, ...); // Outputs to the VC / Windows Debug window (only in debug compile)
+void		Com_SetRemoteLogAddr( char *newAddr );
 void 		NORETURN QDECL Com_Error( int code, const char *fmt, ... );
 void 		NORETURN Com_Quit_f( void );
 int			Com_EventLoop( void );
@@ -794,6 +796,11 @@ extern	cvar_t	*com_G2Report;
 
 extern	cvar_t	*com_affinity;
 extern	cvar_t	*com_busyWait;
+
+#ifdef DEDICATED
+extern	cvar_t	*com_logfile;
+extern	cvar_t	*com_logChat;
+#endif
 
 // both client and server must agree to pause
 extern	cvar_t	*cl_paused;
@@ -1034,9 +1041,9 @@ void	Huff_Decompress(msg_t *buf, int offset);
 void	Huff_Init(huffman_t *huff);
 void	Huff_addRef(huff_t* huff, byte ch);
 int		Huff_Receive (node_t *node, int *ch, byte *fin);
-void	Huff_transmit (huff_t *huff, int ch, byte *fout);
-void	Huff_offsetReceive (node_t *node, int *ch, byte *fin, int *offset);
-void	Huff_offsetTransmit (huff_t *huff, int ch, byte *fout, int *offset);
+void	Huff_transmit (huff_t *huff, int ch, byte *fout, int maxoffset);
+void	Huff_offsetReceive (node_t *node, int *ch, byte *fin, int *offset, int maxoffset);
+void	Huff_offsetTransmit (huff_t *huff, int ch, byte *fout, int *offset, int maxoffset);
 void	Huff_putBit( int bit, byte *fout, int *offset);
 int		Huff_getBit( byte *fout, int *offset);
 

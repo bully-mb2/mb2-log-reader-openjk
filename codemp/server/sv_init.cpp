@@ -465,6 +465,8 @@ void SV_SpawnServer( char *server, qboolean killBots, ForceReload_e eForceReload
 	SV_ShutdownGameProgs();
 	svs.gameStarted = qfalse;
 
+	Com_SetRemoteLogAddr (sv_logremote->string);
+
 	Com_Printf ("------ Server Initialization ------\n");
 	Com_Printf ("Server: %s\n",server);
 
@@ -922,6 +924,7 @@ static void SV_InitRef( void ) {
 #endif
 
 void SV_Init (void) {
+	int index;
 
 	time( &svs.startTime );
 
@@ -957,7 +960,7 @@ void SV_Init (void) {
 	//cvar_t	*sv_clientRate;
 	sv_ratePolicy = Cvar_Get( "sv_ratePolicy", "1", CVAR_ARCHIVE_ND, "Determines which policy of enforcement is used for client's \"rate\" cvar" );
 	Cvar_CheckRange(sv_ratePolicy, 1, 2, qtrue);
-	sv_clientRate = Cvar_Get( "sv_clientRate", "50000", CVAR_ARCHIVE_ND);
+	sv_clientRate = Cvar_Get( "sv_clientRate", "90000", CVAR_ARCHIVE_ND);
 	sv_minRate = Cvar_Get ("sv_minRate", "0", CVAR_ARCHIVE_ND | CVAR_SERVERINFO, "Min bandwidth rate allowed on server. Use 0 for unlimited." );
 	sv_maxRate = Cvar_Get ("sv_maxRate", "0", CVAR_ARCHIVE_ND | CVAR_SERVERINFO, "Max bandwidth rate allowed on server. Use 0 for unlimited." );
 	sv_minPing = Cvar_Get ("sv_minPing", "0", CVAR_ARCHIVE_ND | CVAR_SERVERINFO );
@@ -975,20 +978,22 @@ void SV_Init (void) {
 
 	// server vars
 	sv_rconPassword = Cvar_Get ("rconPassword", "", CVAR_TEMP );
+	sv_logremote = Cvar_Get ("logremote", "", CVAR_TEMP );
 	sv_privatePassword = Cvar_Get ("sv_privatePassword", "", CVAR_TEMP );
-	sv_snapsMin = Cvar_Get ("sv_snapsMin", "10", CVAR_ARCHIVE_ND ); // 1 <=> sv_snapsMax
-	sv_snapsMax = Cvar_Get ("sv_snapsMax", "40", CVAR_ARCHIVE_ND ); // sv_snapsMin <=> sv_fps
-	sv_snapsPolicy = Cvar_Get ("sv_snapsPolicy", "1", CVAR_ARCHIVE_ND, "Determines which policy of enforcement is used for client's \"snaps\" cvar");
+	sv_snapsMin = Cvar_Get ("sv_snapsMin", "0", CVAR_ARCHIVE_ND ); // 1 <=> sv_snapsMax
+	sv_snapsMax = Cvar_Get ("sv_snapsMax", "0", CVAR_ARCHIVE_ND ); // sv_snapsMin <=> sv_fps
+	sv_snapsPolicy = Cvar_Get ("sv_snapsPolicy", "2", CVAR_ARCHIVE_ND, "Determines which policy of enforcement is used for client's \"snaps\" cvar");
 	Cvar_CheckRange(sv_snapsPolicy, 0, 2, qtrue);
 	sv_fps = Cvar_Get ("sv_fps", "40", CVAR_SERVERINFO, "Server frames per second" );
+	Cvar_CheckRange(sv_fps, 0, 125, qtrue);
 	sv_timeout = Cvar_Get ("sv_timeout", "200", CVAR_TEMP );
 	sv_zombietime = Cvar_Get ("sv_zombietime", "2", CVAR_TEMP );
 	Cvar_Get ("nextmap", "", CVAR_TEMP );
 
 	sv_allowDownload = Cvar_Get ("sv_allowDownload", "0", CVAR_SERVERINFO, "Allow clients to download mod files via UDP from the server");
-	sv_master[0] = Cvar_Get ("sv_master1", MASTER_SERVER_NAME, CVAR_PROTECTED );
-	sv_master[1] = Cvar_Get ("sv_master2", JKHUB_MASTER_SERVER_NAME, CVAR_PROTECTED);
-	for(int index = 2; index < MAX_MASTER_SERVERS; index++)
+	sv_master[0] = Cvar_Get ("sv_master1", MASTER_SERVER_NAME, CVAR_ROM|CVAR_PROTECTED );
+	sv_master[1] = Cvar_Get ("sv_master2", BACKUP_MASTER_SERVER_NAME, CVAR_PROTECTED);
+	for(int index = 1; index < MAX_MASTER_SERVERS; index++)
 		sv_master[index] = Cvar_Get(va("sv_master%d", index + 1), "", CVAR_ARCHIVE_ND|CVAR_PROTECTED);
 	sv_reconnectlimit = Cvar_Get ("sv_reconnectlimit", "3", 0);
 	sv_showghoultraces = Cvar_Get ("sv_showghoultraces", "0", 0);
@@ -998,7 +1003,7 @@ void SV_Init (void) {
 	sv_mapChecksum = Cvar_Get ("sv_mapChecksum", "", CVAR_ROM);
 	sv_lanForceRate = Cvar_Get ("sv_lanForceRate", "1", CVAR_ARCHIVE_ND );
 
-	sv_filterCommands = Cvar_Get( "sv_filterCommands", "1", CVAR_ARCHIVE );
+	sv_filterCommands = Cvar_Get( "sv_filterCommands", "2", CVAR_ARCHIVE );
 
 //	sv_debugserver = Cvar_Get ("sv_debugserver", "0", 0);
 
@@ -1006,13 +1011,34 @@ void SV_Init (void) {
 	sv_autoDemoBots = Cvar_Get( "sv_autoDemoBots", "0", CVAR_ARCHIVE_ND, "Record server-side demos for bots" );
 	sv_autoDemoMaxMaps = Cvar_Get( "sv_autoDemoMaxMaps", "0", CVAR_ARCHIVE_ND );
 
+#ifndef DEDICATED //Default this to off on client to avoid potential mod compatibility issues.
+	sv_legacyFixes = Cvar_Get( "sv_legacyFixes", "0", CVAR_ARCHIVE );
+#else
 	sv_legacyFixes = Cvar_Get( "sv_legacyFixes", "1", CVAR_ARCHIVE );
+#endif
+	sv_strictPacketTimestamp = Cvar_Get( "sv_strictPacketTimestamp", "1", CVAR_NONE, "" );
 
 	sv_banFile = Cvar_Get( "sv_banFile", "serverbans.dat", CVAR_ARCHIVE, "File to use to store bans and exceptions" );
+
+	sv_snapShotDuelCull = Cvar_Get("sv_snapShotDuelCull", "1", CVAR_NONE, "Snapshot-based duel isolation");
+
+	sv_hibernateTime = Cvar_Get("sv_hibernateTime", "0", CVAR_ARCHIVE_ND, "Time after which server will enter hibernation mode");
+	sv_hibernateFPS = Cvar_Get("sv_hibernateFPS", "2", CVAR_ARCHIVE_ND, "FPS during hibernation mode");
+	Cvar_CheckRange(sv_hibernateFPS, 1, 125, qtrue);
 
 	sv_maxOOBRate = Cvar_Get("sv_maxOOBRate", "1000", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands" );
 	sv_maxOOBRateIP = Cvar_Get("sv_maxOOBRateIP", "1", CVAR_ARCHIVE, "Maximum rate of handling incoming server commands per IP address" );
 	sv_autoWhitelist = Cvar_Get("sv_autoWhitelist", "1", CVAR_ARCHIVE, "Save player IPs to allow them using server during DOS attack" );
+
+#ifdef DEDICATED
+	sv_antiDST = Cvar_Get("sv_antiDST", "1", CVAR_NONE, "Attempts to detect and kick players injecting or using DST");
+	sv_pingFix = Cvar_Get("sv_pingFix", "2", CVAR_ARCHIVE_ND, "Improved scoreboard client ping calculation - 1: always use new ping calculation - 2: fall back to old method if client's packet rate is less than 60");
+
+	//Used to control/force certain settings at all times
+	//sv_g_logSync = Cvar_Get("g_logsync", "0", CVAR_NONE, "");
+#else
+	sv_pingFix = Cvar_Get("sv_pingFix", "1", CVAR_ARCHIVE_ND, "Improved scoreboard client ping calculation");
+#endif
 
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
