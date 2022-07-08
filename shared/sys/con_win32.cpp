@@ -199,7 +199,7 @@ static void CON_Show( void )
 	writeArea.Left = 0;
 	writeArea.Top = binfo.dwCursorPosition.Y;
 	writeArea.Bottom = binfo.dwCursorPosition.Y;
-	writeArea.Right = MAX_EDIT_LINE;
+	writeArea.Right = binfo.srWindow.Right; // MAX_EDIT_LINE;
 
 	// set color to white
 	attrib = CON_ColorCharToAttrib( COLOR_WHITE );

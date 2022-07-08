@@ -269,6 +269,14 @@ static void SV_WriteSnapshotToClient( client_t *client, msg_t *msg ) {
 			MSG_WriteByte (msg, svc_nop);
 		}
 	}
+
+#ifdef DEDICATED
+	if (!client->chatLogPolicySent || (svs.servermod != SVMOD_UNKNOWN && svs.servermod != SVMOD_MBII && frame && oldframe
+		&& ((oldframe->ps.pm_flags & PMF_FOLLOW) || oldframe->ps.pm_type == PM_SPECTATOR) && !(frame->ps.pm_flags & PMF_FOLLOW) && frame->ps.pm_type != PM_SPECTATOR))
+	{//either hasn't been sent the message or they just switched from spectators
+		SV_SendClientChatLogPolicy(client);
+	}
+#endif
 }
 
 
@@ -361,8 +369,14 @@ SV_AddEntitiesVisibleFromPoint
 ===============
 */
 float g_svCullDist = -1.0f;
+#define MAX_LANDING_EFFECTS_PER_SNAPSHOT 16
 static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *frame,
-									snapshotEntityNumbers_t *eNums, qboolean portal ) {
+#ifndef DEDICATED
+									snapshotEntityNumbers_t *eNums, qboolean portal )
+#else
+									snapshotEntityNumbers_t *eNums, qboolean portal, qboolean skipDuelCull )
+#endif
+{
 	int		e, i;
 	sharedEntity_t *ent;
 	svEntity_t	*svEnt;
@@ -373,6 +387,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 	byte	*bitvector;
 	vec3_t	difference;
 	float	length, radius;
+	int		effectCount = 0;
 
 	// during an error shutdown message we may need to transmit
 	// the shutdown message after the server has shutdown, so
@@ -423,6 +438,31 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 		if ( ent->r.svFlags & SVF_NOTSINGLECLIENT ) {
 			if ( ent->r.singleClient == frame->ps.clientNum ) {
 				continue;
+			}
+		}
+
+#ifdef DEDICATED
+		if (!skipDuelCull && DuelCull(SV_GentityNum(frame->ps.clientNum), ent) == 1) {
+			continue;
+		}
+#endif
+
+		if (ent->s.eType >= ET_EVENTS && sv_legacyFixes->integer && !(sv_legacyFixes->integer & SVFIXES_DISABLE_MOVEMENT_EVENT_CHECKS) &&
+			svs.servermod < SVMOD_JAPRO && svs.servermod != SVMOD_UNKNOWN && svs.servermod != SVMOD_MBII)//only check event types on known mods, to avoid modified eTypes/event enum conflicts
+		{
+			int eventNum = (ent->s.eType - ET_EVENTS) & ~EV_EVENT_BITS;
+
+			if (eventNum == EV_JUMP || eventNum == EV_FALL || eventNum == EV_FOOTSTEP)
+			{ //block these movement-triggered event entities, these should always be on a player
+				continue;
+			}
+			
+			if ((eventNum == EV_PLAY_EFFECT || eventNum == EV_PLAY_EFFECT_ID) &&
+				(ent->s.eventParm >= EFFECT_WATER_SPLASH && ent->s.eventParm <= EFFECT_LANDING_GRAVEL)) //all landing effects
+			{
+				effectCount++;
+				if (effectCount > MAX_LANDING_EFFECTS_PER_SNAPSHOT)
+					continue; //block these so they cant be abused on ffa3
 			}
 		}
 
@@ -522,9 +562,16 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 					continue;
 				}
 			}
+#ifndef DEDICATED
 			SV_AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums, qtrue );
+#else
+			SV_AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums, qtrue, skipDuelCull );
+#endif
 		}
 	}
+
+	if (!com_dedicated->integer && com_developer->integer && effectCount > 0)
+		Com_Printf("Snapshot: numEffects = %i\n", effectCount);
 }
 
 /*
@@ -609,7 +656,11 @@ static void SV_BuildClientSnapshot( client_t *client ) {
 
 	// add all the entities directly visible to the eye, which
 	// may include portal entities that merge other viewpoints
+#ifndef DEDICATED
 	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse );
+#else
+	SV_AddEntitiesVisibleFromPoint( org, frame, &entityNumbers, qfalse, client->disableDuelCull );
+#endif
 
 	// if there were portals visible, there may be out of order entities
 	// in the list which will need to be resorted for the delta compression
@@ -631,6 +682,11 @@ static void SV_BuildClientSnapshot( client_t *client ) {
 		ent = SV_GentityNum(entityNumbers.snapshotEntities[i]);
 		state = &svs.snapshotEntities[svs.nextSnapshotEntities % svs.numSnapshotEntities];
 		*state = ent->s;
+#ifdef DEDICATED
+		if (!client->jpPlugin && DuelCull(client->gentity, ent)) {
+			state->solid = 0;
+		}
+#endif
 		svs.nextSnapshotEntities++;
 		// this should never hit, map should always be restarted first in SV_Frame
 		if ( svs.nextSnapshotEntities >= 0x7FFFFFFE ) {
@@ -691,6 +747,7 @@ Called by SV_SendClientSnapshot and SV_SendClientGameState
 */
 void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 	int			rateMsec;
+	qboolean	fixPing = (qboolean)(sv_pingFix->integer);
 
 	// MW - my attempt to fix illegible server message errors caused by
 	// packet fragmentation of initial snapshot.
@@ -702,9 +759,15 @@ void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 		SV_Netchan_TransmitNextFragment(&client->netchan);
 	}
 
+#ifdef DEDICATED
+	if (sv_pingFix->integer == 2 && client->unfixPing)
+		fixPing = qfalse;
+#endif
+
 	// record information about the message
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSize = msg->cursize;
-	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSent = svs.time;
+	// With sv_pingFix enabled we use a time value that is not limited by sv_fps.
+	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSent = (fixPing ? Sys_Milliseconds() : svs.time);
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageAcked = -1;
 
 	// save the message to demo.  this must happen before sending over network as that encodes the backing databuf

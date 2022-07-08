@@ -68,10 +68,23 @@ cvar_t	*sv_autoDemo;
 cvar_t	*sv_autoDemoBots;
 cvar_t	*sv_autoDemoMaxMaps;
 cvar_t	*sv_legacyFixes;
+cvar_t	*sv_strictPacketTimestamp;
 cvar_t	*sv_banFile;
 cvar_t	*sv_maxOOBRate;
 cvar_t	*sv_maxOOBRateIP;
 cvar_t	*sv_autoWhitelist;
+
+cvar_t	*sv_snapShotDuelCull;
+
+cvar_t	*sv_pingFix;
+cvar_t	*sv_hibernateTime;
+cvar_t	*sv_hibernateFPS;
+
+#ifdef DEDICATED
+cvar_t	*sv_antiDST;
+
+//cvar_t	*sv_g_logSync;
+#endif
 
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;
@@ -249,7 +262,7 @@ void SV_MasterHeartbeat( void ) {
 
 	// send to group masters
 	for ( i = 0 ; i < MAX_MASTER_SERVERS ; i++ ) {
-		if ( !sv_master[i]->string[0] ) {
+		if ( !sv_master[i] || !sv_master[i]->string[0] ) {
 			continue;
 		}
 
@@ -703,7 +716,7 @@ void SV_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 	char	*s;
 	char	*c;
 
-	if (sv_maxOOBRateIP->integer) {
+	if (sv_maxOOBRateIP->integer && com_dedicated->integer && from.type != NA_LOOPBACK) {
 		int rate = Com_Clampi(1, 1000, sv_maxOOBRateIP->integer);
 		int period = 1000 / rate;
 		int burst = 10 * rate;
@@ -873,7 +886,7 @@ void SV_CalcPings( void ) {
 		total = 0;
 		count = 0;
 		for ( j = 0 ; j < PACKET_BACKUP ; j++ ) {
-			if ( cl->frames[j].messageAcked <= 0 ) {
+			if ( cl->frames[j].messageAcked == -1 ) {
 				continue;
 			}
 			delta = cl->frames[j].messageAcked - cl->frames[j].messageSent;
@@ -886,6 +899,10 @@ void SV_CalcPings( void ) {
 			cl->ping = total/count;
 			if ( cl->ping > 999 ) {
 				cl->ping = 999;
+			}
+			if ( sv_pingFix->integer && cl->ping < 1 )
+			{ // Botfilters assume that players with 0 ping are bots. So put the minimum ping for humans at 1. At least with the new ping calculation enabled.
+				cl->ping = 1;
 			}
 		}
 
@@ -1096,8 +1113,8 @@ void SV_CheckCvars( void ) {
 		{
 			client_t *cl = NULL;
 			int i = 0;
-			int minSnaps = Com_Clampi(1, sv_snapsMax->integer, sv_snapsMin->integer); // between 1 and sv_snapsMax ( 1 <-> 40 )
-			int maxSnaps = Q_min(sv_fps->integer, sv_snapsMax->integer); // can't produce more than sv_fps snapshots/sec, but can send less than sv_fps snapshots/sec
+			int minSnaps = sv_snapsMin->integer > 0 ? Com_Clampi(1, sv_snapsMax->integer, sv_snapsMin->integer) : 1; // between 1 and sv_snapsMax ( 1 <-> 40 )
+			int maxSnaps = sv_snapsMax->integer > 0 ? Q_min(sv_fps->integer, sv_snapsMax->integer) : sv_fps->integer; // can't produce more than sv_fps snapshots/sec, but can send less than sv_fps snapshots/sec
 
 			for (i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++) {
 				int val = 1000 / Com_Clampi(minSnaps, maxSnaps, cl->wishSnaps);
@@ -1109,6 +1126,18 @@ void SV_CheckCvars( void ) {
 			}
 		}
 	}
+
+#ifdef DEDICATED
+	//Actively force specific cvar values here
+	/*if (svs.servermod != SVMOD_UNKNOWN && svs.servermod != SVMOD_MBII) //on supported mod and isn't MB2 (logSync is necessary for RTV plugin)
+	{
+		if (sv_g_logSync->modified) {
+			if (sv_g_logSync->integer) //was enabled
+				Cvar_Set("g_logSync", "0");
+			sv_g_logSync->modified = qfalse;
+		}
+	}*/
+#endif
 }
 
 /*
@@ -1119,11 +1148,14 @@ Return time in millseconds until processing of the next server frame.
 */
 int SV_FrameMsec()
 {
-	if(sv_fps)
+	if (sv_fps)
 	{
 		int frameMsec;
 
-		frameMsec = 1000.0f / sv_fps->value;
+		if (svs.hibernation.enabled)
+			frameMsec = 1000.0f / sv_hibernateFPS->value;
+		else 
+			frameMsec = 1000.0f / sv_fps->value;
 
 		if(frameMsec < sv.timeResidual)
 			return 0;
@@ -1153,6 +1185,26 @@ void SV_Frame( int msec ) {
 		return;
 	}
 
+	if (svs.initialized && svs.gameStarted) {
+		int i = 0;
+		qboolean humans = qfalse;
+		for (i = 0; i < sv_maxclients->integer; i++) {
+			if (svs.clients[i].state >= CS_CONNECTED && svs.clients[i].netchan.remoteAddress.type != NA_BOT) {
+				humans = qtrue;
+				break;
+			}
+		}
+
+		//Check for hibernation mode
+		if (sv_hibernateTime->integer && !svs.hibernation.enabled && !humans) {
+			int elapsed_time = Sys_Milliseconds() - svs.hibernation.lastTimeDisconnected;
+			if (elapsed_time >= sv_hibernateTime->integer) {
+				svs.hibernation.enabled = qtrue;
+				Com_Printf("Server entered hibernation mode\n");
+			}
+		}
+	}
+
 	if ( !com_sv_running->integer ) {
 		return;
 	}
@@ -1166,7 +1218,14 @@ void SV_Frame( int msec ) {
 	if ( sv_fps->integer < 1 ) {
 		Cvar_Set( "sv_fps", "10" );
 	}
-	frameMsec = 1000 / sv_fps->integer * com_timescale->value;
+
+	if (svs.hibernation.enabled) {
+		frameMsec = 1000 / sv_hibernateFPS->integer;
+	}
+	else {
+		frameMsec = 1000 / sv_fps->integer * com_timescale->value;
+	}
+
 	// don't let it scale below 1ms
 	if(frameMsec < 1)
 	{
