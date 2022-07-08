@@ -465,6 +465,8 @@ void SV_SpawnServer( char *server, qboolean killBots, ForceReload_e eForceReload
 	SV_ShutdownGameProgs();
 	svs.gameStarted = qfalse;
 
+	Com_SetRemoteLogAddr (sv_logremote->string);
+
 	Com_Printf ("------ Server Initialization ------\n");
 	Com_Printf ("Server: %s\n",server);
 
@@ -976,6 +978,7 @@ void SV_Init (void) {
 
 	// server vars
 	sv_rconPassword = Cvar_Get ("rconPassword", "", CVAR_TEMP );
+	sv_logremote = Cvar_Get ("logremote", "", CVAR_TEMP );
 	sv_privatePassword = Cvar_Get ("sv_privatePassword", "", CVAR_TEMP );
 	sv_snapsMin = Cvar_Get ("sv_snapsMin", "0", CVAR_ARCHIVE_ND ); // 1 <=> sv_snapsMax
 	sv_snapsMax = Cvar_Get ("sv_snapsMax", "0", CVAR_ARCHIVE_ND ); // sv_snapsMin <=> sv_fps
