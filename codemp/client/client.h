@@ -428,6 +428,7 @@ void CL_Init (void);
 void CL_FlushMemory(void);
 void CL_ShutdownAll( qboolean shutdownRef );
 void CL_AddReliableCommand( const char *cmd, qboolean isDisconnectCmd );
+void CL_AddSMODAutoCompletion( void );
 
 void CL_StartHunkUsers( void );
 

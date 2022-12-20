@@ -1314,6 +1314,8 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("datapad", CL_DataPad_f);
 	Cmd_AddCommand ("endscreendissolve", CL_EndScreenDissolve_f);
 
+	CL_AddSMODAutoCompletion();
+
 	CL_InitRef();
 
 	CL_StartHunkUsers();

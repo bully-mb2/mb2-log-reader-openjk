@@ -181,6 +181,45 @@ void CL_AddReliableCommand( const char *cmd, qboolean isDisconnectCmd ) {
 }
 
 /*
+==================
+CL_CompleteMapName
+==================
+*/
+static void CL_CompleteMapName(char* args, int argNum) {
+	if (argNum == 2)
+		Field_CompleteFilename("maps", "bsp", qtrue, qfalse);
+}
+
+
+#define SMOD_COMMAND_PREFIX "_smod_"
+/*
+==================
+CL_CompleteSMODCommand
+==================
+*/
+static void CL_CompleteSMODCommand(char* args, int argNum) {
+	if (argNum > 1) {
+		Com_Printf("%s\n", args);
+		Com_Printf("%d\n", argNum);
+		// Skip "smod "
+		char* p = Com_SkipTokens(args, 1, " ");
+		Com_Printf("%s\n", p);
+		if (p > args) {
+		}
+	}
+}
+
+/*
+==================
+CL_AddSMODAutoCompletion
+==================
+*/
+void CL_AddSMODAutoCompletion(void) {
+	Cmd_AddCommand("smod", NULL, "SMOD command for changing map");
+	Cmd_SetCommandCompletionFunc("smod", CL_CompleteSMODCommand);
+}
+
+/*
 =======================================================================
 
 CLIENT SIDE DEMO RECORDING
@@ -2833,6 +2872,8 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("forcepowers", CL_SetForcePowers_f );
 	Cmd_AddCommand ("video", CL_Video_f, "Record demo to avi" );
 	Cmd_AddCommand ("stopvideo", CL_StopVideo_f, "Stop avi recording" );
+
+	CL_AddSMODAutoCompletion ();
 
 	CL_InitRef();
 
