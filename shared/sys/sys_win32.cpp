@@ -596,6 +596,7 @@ void Sys_Sleep( int msec )
 #endif
 }
 
+#ifdef STEAM_INTEGRATION
 /*
 ================
 Sys_SteamInit
@@ -683,3 +684,4 @@ void Sys_SteamShutdown()
 	gp_steamLibrary = nullptr;
 #endif
 }
+#endif

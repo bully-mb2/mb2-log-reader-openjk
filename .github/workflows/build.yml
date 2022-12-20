@@ -39,7 +39,9 @@ jobs:
       uses: actions/upload-artifact@v2.2.4
       with:
         name: Windows Build ${{ matrix.build_type }}
-        path: ${{runner.workspace}}/build/${{ matrix.build_type }}
+        path: |
+            ${{runner.workspace}}/build/${{ matrix.build_type }}
+            !${{runner.workspace}}/build/${{ matrix.build_type }}/compact_glsl.exe
         
   win_cleanup:
     name: Cleanup Windows Builds
@@ -76,7 +78,7 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchains/linux-i686.cmake
         -DBuildMPDed=OFF -DBuildMPEngine=ON -DBuildMPRdVanilla=ON -DBuildMPCGame=OFF
         -DBuildMPUI=OFF -DBuildSPEngine=OFF -DBuildSPGame=OFF -DBuildSPRdVanilla=OFF
-        -DUseInternalPNG=ON -DUseInternalJPEG=ON
+        -DUseInternalPNG=ON -DUseInternalJPEG=ON -DBuildMPRdVulkan=ON -DBuildMPRend2=ON
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
@@ -84,6 +86,8 @@ jobs:
       run: |
         cmake --build .
         mv codemp/rd-vanilla/rd-vanilla-mbii_i386.so .
+        mv codemp/rd-vulkan/rd-vulkan-mbii_i386.so .
+        mv codemp/rd-rend2/rd-rend2-mbii_i386.so .
       
     - name: Upload Build
       uses: actions/upload-artifact@v2.2.4
@@ -114,6 +118,7 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchains/linux-i686.cmake
         -DBuildMPDed=ON -DBuildMPEngine=OFF -DBuildMPRdVanilla=OFF -DBuildMPCGame=OFF
         -DBuildMPUI=OFF -DBuildSPEngine=OFF -DBuildSPGame=OFF -DBuildSPRdVanilla=OFF
+        -DBuildMPRdVulkan=OFF -DBuildMPRend2=OFF
 
     - name: Build
       working-directory: ${{runner.workspace}}/build

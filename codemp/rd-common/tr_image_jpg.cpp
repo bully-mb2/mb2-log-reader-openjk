@@ -121,6 +121,11 @@ void LoadJPG( const char *filename, unsigned char **pic, int *width, int *height
 	* See libjpeg.doc for more info.
 	*/
 
+	if (cinfo.progressive_mode)
+	{
+		Com_Printf("^3WARNING: ^1%s^3 is in progressive format! Resave as a baseline JPEG to avoid crashing in future builds.\n", filename);
+	}
+
 	/* Step 4: set parameters for decompression */
 
 

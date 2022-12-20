@@ -96,6 +96,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 //	extern int g_G2AllocServer;
 #endif
 
+#ifdef _WIN32
+//#define STEAM_INTEGRATION //disabled for GPL compliance
+#endif
+
 #include <assert.h>
 #include <math.h>
 #include <float.h>
