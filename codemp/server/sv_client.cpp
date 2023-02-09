@@ -25,6 +25,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // sv_client.c -- server code for dealing with clients
 
 #include "server.h"
+#include "smod.h"
 #include "qcommon/stringed_ingame.h"
 
 #ifdef USE_INTERNAL_ZLIB
@@ -295,6 +296,7 @@ void SV_DirectConnect( netadr_t from ) {
 	// we got a newcl, so reset the reliableSequence and reliableAcknowledge
 	cl->reliableAcknowledge = 0;
 	cl->reliableSequence = 0;
+	SMOD::LogoutClient(cl);
 
 gotnewcl:
 
@@ -349,6 +351,7 @@ gotnewcl:
 	newcl->nextSnapshotTime = svs.time;
 	newcl->lastPacketTime = svs.time;
 	newcl->lastConnectTime = svs.time;
+	SMOD::LogoutClient(cl);
 
 	// when we receive the first packet from the client, we will
 	// notice that it is from a different serverid and that the
@@ -393,6 +396,7 @@ void SV_DropClient( client_t *drop, const char *reason ) {
 	if ( drop->state == CS_ZOMBIE ) {
 		return;		// already dropped
 	}
+	SMOD::LogoutClient(drop);
 
 	// Kill any download
 	SV_CloseDownload( drop );
@@ -605,6 +609,7 @@ void SV_SendClientMapChange( client_t *client )
 
 	// deliver this to the client
 	SV_SendMessageToClient( &msg, client );
+	SMOD::LogoutClient(client);
 }
 
 /*
@@ -1596,6 +1601,35 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 					// also strip ';' for callvote
 					Cmd_Args_Sanitize( MAX_CVAR_VALUE_STRING, ";", " " );
 				}
+
+				if (!strcmp(Cmd_Argv(0), "smod")) {
+					Com_DPrintf("^1@Bully: catching smod (%s, %s, %s, %s)\n", Cmd_Argv(0), Cmd_Argv(1), Cmd_Argv(2), Cmd_Argv(3));
+					if (!strcmp(Cmd_Argv(1), "login")) {
+						SMOD::AuthenticateClient(cl, atoi(Cmd_Argv(2)), Cmd_Argv(3));
+					}
+					else if (!strcmp(Cmd_Argv(1), "logout")) {
+						SMOD::LogoutClient(cl);
+					}
+					else if (!strcmp(Cmd_Argv(1), "wml")) {
+						SV_SendServerCommand(cl, "print \"printtest2\n\"\n");
+						SV_SendServerCommand(cl, "print \"%d\n\"\n", cl->smod);
+						return;
+					}
+					else if (SMOD::Execute(cl, Cmd_Argv(1))) {
+						return;
+					}
+				}
+
+				if (!strcmp(Cmd_Argv(0), "siegeclassopen")) {
+					cl->isSpectating = qfalse;
+				}
+
+
+				if (!strcmp(Cmd_Argv(0), "team")) {
+					if (!strcmp(Cmd_Argv(1), "s")) {
+						cl->isSpectating = qtrue;
+					}
+				}
 			}
 			GVM_ClientCommand( cl - svs.clients );
 		}
@@ -1911,6 +1945,15 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 			lastServerTime = cmds[i].serverTime;
 		}
 #endif
+		usercmd_t* dcmd = &cmds[i];
+		if (cl->isFrozen) {
+			dcmd->buttons = 0;
+			dcmd->generic_cmd = 0;
+			dcmd->forwardmove = 0;
+			dcmd->rightmove = 0;
+			dcmd->upmove = 0;
+		}
+
 		SV_ClientThink (cl, &cmds[ i ]);
 	}
 
