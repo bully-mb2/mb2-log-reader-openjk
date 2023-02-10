@@ -187,7 +187,6 @@ typedef struct client_s {
 	int				smodID;				// SMOD admin id
 	int				smod;				// SMOD authorization level
 	int				warnLevel;			// SMOD warn level
-	qboolean        isSpectating;		// SMOD Is client spectating
 	qboolean        isFrozen;		    // SMOD Is client frozen
 	qboolean		gotCP; // TTimo - additional flag to distinguish between a bad pure checksum, and no cp command at all
 	netchan_t		netchan;

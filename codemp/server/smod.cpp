@@ -52,7 +52,6 @@ void SMOD::AuthenticateClient(client_t* cl, const int& id, const char* password)
 void SMOD::LogoutClient(client_t* cl) {
 	cl->smodID = SMOD_LOGGED_OUT;
 	cl->smod = SMOD_LOGGED_OUT;
-	cl->isSpectating = qtrue;
 	cl->isFrozen = qfalse;
 	cl->warnLevel = 0;
 }
@@ -312,11 +311,6 @@ void SMOD::Slay(client_t* src) {
 	client_t* tar = SMOD::GetClient(src, target);
 	if (!tar) {
 		SMOD::Print(src, "Couldn't slay target with given parameter");
-		return;
-	}
-
-	if (tar->isSpectating) {
-		SV_SendServerCommand(src, "print \"%sCouldn't slay %s %s, player is spectating.\n\"\n", S_COLOR_YELLOW, tar->name, S_COLOR_YELLOW);
 		return;
 	}
 
