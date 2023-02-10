@@ -1610,11 +1610,6 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 					else if (!strcmp(Cmd_Argv(1), "logout")) {
 						SMOD::LogoutClient(cl);
 					}
-					else if (!strcmp(Cmd_Argv(1), "wml")) {
-						SV_SendServerCommand(cl, "print \"printtest2\n\"\n");
-						SV_SendServerCommand(cl, "print \"%d\n\"\n", cl->smod);
-						return;
-					}
 					else if (SMOD::Execute(cl, Cmd_Argv(1))) {
 						return;
 					}
