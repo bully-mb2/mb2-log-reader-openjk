@@ -51,4 +51,7 @@ namespace SMOD {
 	void Tell(client_t* src);
 
 	void Slay(client_t* src);
+
+	void Cheats(client_t* src);
+
 }

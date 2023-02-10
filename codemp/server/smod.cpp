@@ -10,6 +10,7 @@ static SMOD::smodcmd_t smodcmds[] = {
 	{"freeze", 0x40000, SMOD::Freeze},
 	{"warn", 0x80000, SMOD::Warn},
 	{"warnlvl", 0x100000, SMOD::WarnLevel},
+	{"cheats", 0x2000000, SMOD::Cheats},
 	{"jaguid", 0x4000000, SMOD::JAguid},
 	{"tell", 0x8000000, SMOD::Tell},
 	{"slay", 0x10000000, SMOD::Slay},
@@ -317,4 +318,17 @@ void SMOD::Slay(client_t* src) {
 	SV_SendServerCommand(src, "print \"%sSlaying %s\n\"\n", S_COLOR_YELLOW, tar->name);
 	SV_SendServerCommand(NULL, "chat \"%s%s %swas %sslain %sby Admin %s#%d\n\"\n", S_COLOR_WHITE, tar->name, S_COLOR_WHITE, S_COLOR_RED, S_COLOR_WHITE, S_COLOR_YELLOW, src->smodID);
 	tar->gentity->playerState->fallingToDeath = 1;
+}
+
+void SMOD::Cheats(client_t* src) {
+	char* enabled = Cmd_Argv(2);
+	if (!strcmp(enabled, "") || (strcmp(enabled, "1") && strcmp(enabled, "0"))) {
+		SMOD::Print(src, "Usage: smod cheats <0: disabled or 1: enabled>");
+		return;
+	}
+
+	Cvar_Set("g_cheats", enabled);
+	Cvar_Set("sv_cheats", enabled);
+
+	SV_SendServerCommand(src, "print \"%sSet sv_cheats = %s\n\"\n", S_COLOR_YELLOW, enabled);
 }

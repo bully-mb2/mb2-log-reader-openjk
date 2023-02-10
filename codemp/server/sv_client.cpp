@@ -1615,6 +1615,7 @@ void SV_ExecuteClientCommand( client_t *cl, const char *s, qboolean clientOK ) {
 					}
 				}
 			}
+
 			GVM_ClientCommand( cl - svs.clients );
 		}
 	}
