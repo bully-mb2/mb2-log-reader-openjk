@@ -312,6 +312,8 @@ if(BuildMPEngine OR BuildMPDed)
 		"${MPDir}/server/NPCNav/navigator.cpp"
 		"${MPDir}/server/NPCNav/navigator.h"
 		"${MPDir}/server/server.h"
+		"${MPDir}/server/smod.h"
+		"${MPDir}/server/smod.cpp"
 		"${MPDir}/server/sv_bot.cpp"
 		"${MPDir}/server/sv_ccmds.cpp"
 		"${MPDir}/server/sv_challenge.cpp"
