@@ -54,4 +54,10 @@ namespace SMOD {
 
 	void Cheats(client_t* src);
 
+	void Bring(client_t* src);
+
+	void Teleport(client_t* src);
+
+	void ExecuteTeleport(client_t* src, client_t* fromClient, client_t* toClient);
+
 }

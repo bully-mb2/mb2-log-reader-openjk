@@ -10,6 +10,8 @@ static SMOD::smodcmd_t smodcmds[] = {
 	{"freeze", 0x40000, SMOD::Freeze},
 	{"warn", 0x80000, SMOD::Warn},
 	{"warnlvl", 0x100000, SMOD::WarnLevel},
+	{"bring", 0x1000000, SMOD::Bring},
+	{"tp", 0x1000000, SMOD::Teleport},
 	{"cheats", 0x2000000, SMOD::Cheats},
 	{"jaguid", 0x4000000, SMOD::JAguid},
 	{"tell", 0x8000000, SMOD::Tell},
@@ -331,4 +333,62 @@ void SMOD::Cheats(client_t* src) {
 	Cvar_Set("sv_cheats", enabled);
 
 	SV_SendServerCommand(src, "print \"%sSet sv_cheats = %s\n\"\n", S_COLOR_YELLOW, enabled);
+}
+
+void SMOD::Bring(client_t* src) {
+	char* target = Cmd_Argv(2);
+	if (!strcmp(target, "")) {
+		SMOD::Print(src, "Usage: smod bring <clientid or name>");
+		return;
+	}
+
+	client_t* tar = SMOD::GetClient(src, target);
+	if (!tar) {
+		SMOD::Print(src, "Couldn't bring target with given parameter");
+		return;
+	}
+
+	SMOD::ExecuteTeleport(src, tar, src);
+}
+
+void SMOD::Teleport(client_t* src) {
+	char* from = Cmd_Argv(2);
+	char* to = Cmd_Argv(3);
+	if (!strcmp(from, "")) {
+		SMOD::Print(src, "Usage: smod tp <clientid or name> <optional: target clientid or name>");
+		return;
+	}
+
+	client_t* fromClient = SMOD::GetClient(src, from);
+	if (!fromClient) {
+		SMOD::Print(src, "Couldn't tp to target with given parameter");
+		return;
+	}
+
+	client_t* toClient = NULL;
+	if (strcmp(to, "")) {
+		toClient = SMOD::GetClient(src, to);
+		if (!toClient) {
+			SMOD::Print(src, "Couldn't tp to target1 to target2 with given parameter");
+			return;
+		}
+	}
+
+	if (toClient == NULL) {
+		toClient = fromClient;
+		fromClient = src;
+	}
+
+	SMOD::ExecuteTeleport(src, fromClient, toClient);
+}
+
+void SMOD::ExecuteTeleport(client_t* src, client_t* fromClient, client_t* toClient) {
+	if (fromClient == toClient) {
+		SMOD::Print(src, "Can't tp targets because they are the same person!");
+		return;
+	}
+
+	SV_SendServerCommand(src, "print \"%sTeleporting %s%s to %s\n\"\n", S_COLOR_YELLOW, fromClient->name, S_COLOR_YELLOW, toClient->name);
+	SV_SendServerCommand(NULL, "chat \"%s%s %swas %steleported %sto %s %sby Admin %s#%d\n\"\n", S_COLOR_WHITE, fromClient->name, S_COLOR_WHITE, S_COLOR_RED, S_COLOR_WHITE, toClient->name, S_COLOR_WHITE, S_COLOR_YELLOW, src->smodID);
+	VectorCopy(toClient->gentity->playerState->origin, fromClient->gentity->playerState->origin);
 }
