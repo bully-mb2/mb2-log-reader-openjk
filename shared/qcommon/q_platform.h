@@ -367,7 +367,7 @@ typedef union byteAlias_u {
 } byteAlias_t;
 
 // platform string
-#if defined(NDEBUG)
+#if defined(_DEBUG)
 	#define PLATFORM_STRING OS_STRING "-" ARCH_STRING
 #else
 	#define PLATFORM_STRING OS_STRING "-" ARCH_STRING "-debug"
