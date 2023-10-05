@@ -1992,7 +1992,7 @@ void RB_EndSurface( void ) {
 		return;
 	}
 
-	if (tr.world && !backEnd.framePostProcessed) {
+	if (tr.world && !backEnd.framePostProcessed && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
 		if (tr.world->skyboxportal)
 		{
 			// world
