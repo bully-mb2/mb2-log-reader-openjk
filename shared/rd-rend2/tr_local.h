@@ -57,6 +57,7 @@ typedef unsigned int glIndex_t;
 #define MAX_VBOS      4096
 #define MAX_IBOS      4096
 #define MAX_G2_BONES  72
+#define MAX_GPU_FOGS  24
 
 #define MAX_CALC_PSHADOWS    64
 #define MAX_DRAWN_PSHADOWS    32 // do not increase past 32, because bit flags are used on surfaces
@@ -751,7 +752,7 @@ struct FogsBlock
 
 	int numFogs;
 	float pad0[3];
-	Fog fogs[16];
+	Fog fogs[MAX_GPU_FOGS];
 };
 
 struct EntityBlock
