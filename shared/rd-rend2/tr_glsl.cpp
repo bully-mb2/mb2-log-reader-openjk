@@ -1391,6 +1391,7 @@ void GLSL_InitSplashScreenShader()
 	size_t splashLen = strlen("splash");
 	tr.splashScreenShader.program = program;
 	tr.splashScreenShader.name = (char *)Z_Malloc(splashLen + 1, TAG_GENERAL);
+	GLSL_InitUniforms(&tr.splashScreenShader);
 	Q_strncpyz(tr.splashScreenShader.name, "splash", splashLen + 1);
 }
 
