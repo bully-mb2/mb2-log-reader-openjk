@@ -268,7 +268,7 @@ void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, floa
 		if (maxValue > 1.0f)
 		{
 			VectorScale(dl->color, 1.0f / maxValue, dl->color);
-			dl->radius *= maxValue;
+			//dl->radius *= maxValue; //Commented out for possible fix to capture node brightness by SomaZ instructuion - Mace
 		}
 		dl->radius = MIN(dl->radius, 65535.0f);
 	}
