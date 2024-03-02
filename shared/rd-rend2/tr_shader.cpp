@@ -3759,6 +3759,7 @@ static shader_t *GeneratePermanentShader( void ) {
 	}
 
 	RB_AddShaderToShaderInstanceUBO(newShader);
+	newShader->spriteUbo = -1;
 
 	SortNewShader();
 
