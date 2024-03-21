@@ -2112,7 +2112,7 @@ static qboolean ParseStage( shaderStage_t *stage, const char **text )
 		{
 			if (shader.isHDRLit)
 			{
-				image_t *hdrImage = R_FindImageFile(bufferBaseColorTextureName, IMGTYPE_COLORALPHA, IMGFLAG_NOLIGHTSCALE | IMGFLAG_HDR_LIGHTMAP | IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE);
+				image_t *hdrImage = R_FindImageFile(bufferBaseColorTextureName, IMGTYPE_COLORALPHA, IMGFLAG_NOLIGHTSCALE | IMGFLAG_HDR | IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE);
 				if (hdrImage)
 					stage->bundle[0].image[0] = hdrImage;
 			}
@@ -2678,8 +2678,6 @@ static qboolean ParseShader( const char **text )
 			tr.autoExposureMinMax[0] = atof( token );
 			token = COM_ParseExt( text, qfalse );
 			tr.autoExposureMinMax[1] = atof( token );
-
-			tr.explicitToneMap = true;
 
 			SkipRestOfLine( text );
 			continue;
