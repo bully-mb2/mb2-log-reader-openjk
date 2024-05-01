@@ -507,6 +507,12 @@ void RE_EndScene()
 	r_firstScenePoly = r_numpolys;
 	tr.skyPortalEntities = 0;
 	tr.numCachedViewParms = 0;
+
+	backEndData->currentFrame->currentScene++;
+	if (backEndData->currentFrame->currentScene > MAX_SCENCES)
+	{
+		ri.Error(ERR_DROP, "Tried to render to many subscenes per frame");
+	}
 }
 
 /*
