@@ -509,7 +509,7 @@ void RE_EndScene()
 	tr.numCachedViewParms = 0;
 
 	backEndData->currentFrame->currentScene++;
-	if (backEndData->currentFrame->currentScene > MAX_SCENCES)
+	if (backEndData->currentFrame->currentScene > MAX_SCENES)
 	{
 		ri.Error(ERR_DROP, "Tried to render to many subscenes per frame");
 	}
