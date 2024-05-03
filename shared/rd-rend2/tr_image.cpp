@@ -2834,7 +2834,10 @@ image_t *R_BuildSDRSpecGlossImage(shaderStage_t *stage, const char *specImageNam
 	}
 	ri.Hunk_FreeTempMemory(specPic);
 
-	return R_CreateImage(sdrName, sdrSpecPic, specWidth, specHeight, IMGTYPE_COLORALPHA, flags & ~IMGFLAG_SRGB, 0);
+	image_t *outImage = R_CreateImage(sdrName, sdrSpecPic, specWidth, specHeight, IMGTYPE_COLORALPHA, flags & ~IMGFLAG_SRGB, 0);
+	Hunk_FreeTempMemory(sdrSpecPic);
+
+	return outImage;
 }
 
 static void R_CreateNormalMap ( const char *name, byte *pic, int width, int height, int flags )
