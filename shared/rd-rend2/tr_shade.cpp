@@ -1056,10 +1056,10 @@ static void RB_FogPass( shaderCommands_t *input, const VertexArraysProperties *v
 		input->shader->sort != SS_FOG)
 		shaderBits |= FOGDEF_USE_FALLBACK_GLOBAL_FOG;
 
-	if (input->numPasses > 0)
+	/*if (input->numPasses > 0)
 		if (input->xstages[0]->alphaTestType != ALPHA_TEST_NONE)
-			shaderBits |= FOGDEF_USE_ALPHA_TEST;
-	
+			shaderBits |= FOGDEF_USE_ALPHA_TEST;*/
+
 	shaderProgram_t *sp = tr.fogShader + shaderBits;
 
 	backEnd.pc.c_fogDraws++;
@@ -1207,7 +1207,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 		if (stage->bundle[0].tcGen != TCGEN_TEXTURE || (stage->bundle[0].numTexMods))
 			index |= REFRACTIONDEF_USE_TCGEN_AND_TCMOD;
 
-		if (!useAlphaTestGE192)
+		/*if (!useAlphaTestGE192)
 		{
 			if (stage->alphaTestType != ALPHA_TEST_NONE)
 				index |= REFRACTIONDEF_USE_TCGEN_AND_TCMOD | REFRACTIONDEF_USE_ALPHA_TEST;
@@ -1215,7 +1215,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 		else
 		{
 			index |= REFRACTIONDEF_USE_ALPHA_TEST;
-		}
+		}*/
 
 		if (tr.hdrLighting == qtrue)
 			index |= REFRACTIONDEF_USE_SRGB_TRANSFORM;
@@ -1244,7 +1244,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 				}
 			}
 
-			if ( !useAlphaTestGE192 )
+			/*if ( !useAlphaTestGE192 )
 			{
 				if (stage->alphaTestType != ALPHA_TEST_NONE)
 					index |= LIGHTDEF_USE_ALPHA_TEST;
@@ -1252,7 +1252,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 			else
 			{
 				index |= LIGHTDEF_USE_ALPHA_TEST;
-			}
+			}*/
 			
 			// TODO: remove light vertex def and fix parallax usage on unlit stages like glow stages
 			if (stage->glslShaderIndex & LIGHTDEF_USE_PARALLAXMAP &&
@@ -1281,7 +1281,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 				index |= GENERICDEF_USE_SKELETAL_ANIMATION;
 			}
 
-			if ( !useAlphaTestGE192 )
+			/*if ( !useAlphaTestGE192 )
 			{
 				if (stage->alphaTestType != ALPHA_TEST_NONE)
 					index |= GENERICDEF_USE_TCGEN_AND_TCMOD | GENERICDEF_USE_ALPHA_TEST;
@@ -1289,7 +1289,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 			else
 			{
 				index |= GENERICDEF_USE_ALPHA_TEST;
-			}
+			}*/
 
 			if (backEnd.currentEntity->e.renderfx & (RF_DISINTEGRATE1 | RF_DISINTEGRATE2))
 				index |= GENERICDEF_USE_RGBAGEN;
@@ -1325,7 +1325,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 				} 
 			}
 
-			if ( !useAlphaTestGE192 )
+			/*if ( !useAlphaTestGE192 )
 			{
 				if (stage->alphaTestType != ALPHA_TEST_NONE)
 					index |= LIGHTDEF_USE_TCGEN_AND_TCMOD | LIGHTDEF_USE_ALPHA_TEST;
@@ -1333,7 +1333,7 @@ static shaderProgram_t *SelectShaderProgram( int stageIndex, shaderStage_t *stag
 			else
 			{
 				index |= LIGHTDEF_USE_ALPHA_TEST;
-			}
+			}*/
 		}
 
 		result = &stage->glslShaderGroup[index];
@@ -1683,6 +1683,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input, const VertexArrays
 		{
 			int i;
 			vec4_t enableTextures = {};
+			enableTextures[0] = (float)pStage->glow;
 
 			if (r_sunlightMode->integer &&
 					(backEnd.viewParms.flags & VPF_USESUNLIGHT) &&
@@ -1742,7 +1743,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input, const VertexArrays
 					if (pStage->bundle[TB_NORMALMAP].image[0])
 					{
 						samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[TB_NORMALMAP], TB_NORMALMAP);
-						enableTextures[0] = 1.0f;
 					}
 					else if (r_normalMapping->integer)
 					{
@@ -1787,6 +1787,10 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input, const VertexArrays
 		{
 			samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[0], 0);
 			samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[1], 1);
+
+			vec4_t enableTextures = {};
+			enableTextures[0] = (float)pStage->glow;
+			uniformDataWriter.SetUniformVec4(UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 		else 
 		{
@@ -1794,6 +1798,9 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input, const VertexArrays
 			// set state
 			//
 			samplerBindingsWriter.AddAnimatedImage(&pStage->bundle[0], 0);
+			vec4_t enableTextures = {};
+			enableTextures[0] = (float)pStage->glow;
+			uniformDataWriter.SetUniformVec4(UNIFORM_ENABLETEXTURES, enableTextures);
 		}
 
 		//
