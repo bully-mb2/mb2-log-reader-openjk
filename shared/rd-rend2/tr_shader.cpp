@@ -3336,8 +3336,9 @@ static qboolean CollapseStagesToGLSL(void)
 			diffuse  = pStage;
 			parallax = qfalse;
 			lightmap = NULL;
+			vertexlit = qfalse;
 
-			// we have a diffuse map, find matching lightmap
+			// we have a diffuse map, find matching lightmap or vertex lit stage
 			for (j = i + 1; j < MAX_SHADER_STAGES; j++)
 			{
 				shaderStage_t *pStage2 = &stages[j];
@@ -3357,6 +3358,16 @@ static qboolean CollapseStagesToGLSL(void)
 					lightmaps[j] = NULL;
 					break;
 				}
+
+				if (pStage2->bundle[0].isLightmap &&
+					pStage2->bundle[0].image[0] == tr.whiteImage &&
+					pStage2->rgbGen == CGEN_EXACT_VERTEX)
+				{
+					int blendBits = pStage2->stateBits & (GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS);
+					if (blendBits == (GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO) ||
+						blendBits == (GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR))
+						vertexlit = qtrue;
+				}
 			}
 
 			tcgen = qfalse;
@@ -3374,7 +3385,6 @@ static qboolean CollapseStagesToGLSL(void)
 				diffuselit = qtrue;
 			}
 
-			vertexlit = qfalse;
 			if (diffuse->rgbGen == CGEN_VERTEX_LIT || diffuse->rgbGen == CGEN_EXACT_VERTEX_LIT || diffuse->rgbGen == CGEN_VERTEX || diffuse->rgbGen == CGEN_EXACT_VERTEX)
 			{
 				vertexlit = qtrue;
